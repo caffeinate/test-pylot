@@ -16,18 +16,14 @@ def number_of_workers():
     return (multiprocessing.cpu_count() * 2) + 1
 
 
-def handler_app(environ, start_response):
-    response_body = b'Works fine'
-    status = '200 OK'
+#----------------------------
+from flask import Flask
+app = Flask(__name__)
 
-    response_headers = [
-        ('Content-Type', 'text/plain'),
-    ]
-
-    start_response(status, response_headers)
-
-    return [response_body]
-
+@app.route("/")
+def hello():
+    return "Hello World!"
+#----------------------------
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
@@ -51,4 +47,4 @@ if __name__ == '__main__':
         'bind': '%s:%s' % ('127.0.0.1', '8080'),
         'workers': number_of_workers(),
     }
-    StandaloneApplication(handler_app, options).run()
+    StandaloneApplication(app, options).run()
