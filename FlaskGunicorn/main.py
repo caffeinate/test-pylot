@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import hashlib
 import multiprocessing
 import threading
+import time
 
 import gunicorn.app.base
 from gunicorn.six import iteritems
@@ -18,6 +19,8 @@ logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
+
+CHALLENGE_COMPLEXITY = 4
 
 def number_of_workers():
     return (multiprocessing.cpu_count() * 2) + 1
@@ -58,8 +61,27 @@ class SimpleDaemonWorker(object):
     """
     class SimpleDaemon runs in a thread
     """
-    def __init__(self):
-        pass
+    def __init__(self, task_id, lock, data):
+        self.task_id = task_id
+        self.shared_lock = lock
+        self.shared_data = data
+
+    def run_forever(self):
+
+        # starting point
+        counter = self.task_id
+        while True:
+            counter = counter % 16
+            next_char = hex(counter)[-1]
+            ch, reps = self.crypto_challenge(next_char, CHALLENGE_COMPLEXITY)
+            self.shared_lock.acquire()
+
+            if self.task_id not in self.shared_data:
+                self.shared_data[self.task_id] = []
+            self.shared_data[self.task_id].append((ch, reps))
+
+            self.shared_lock.release()
+            counter += 1
 
     def crypto_challenge(self, ch, count):
         """
@@ -90,33 +112,33 @@ class SimpleDaemon(object):
     run a few threads that do something and return results to a shared area
     """
     def __init__(self):
-        pass
+        self.shared_lock = threading.Lock()
+        self.shared_data = {}
 
     def go(self, num_threads):
-        hex_chars = self._hex_chars(num_threads)
 
-        tasks = [BackgroundTask(SimpleDaemonWorker(), 'crypto_challenge', [ch,4])
-                 for ch in hex_chars
+        daemon_thread_count = 3
+        tasks = [BackgroundTask(SimpleDaemonWorker(i,
+                                                   self.shared_lock,
+                                                   self.shared_data
+                                                   ),
+                               'run_forever'
+                               )
+                 for i in range(daemon_thread_count)
                  ]
 
         for t in tasks:
             t.start()
+
+        #while True:
+        #    time.sleep(5)
+        #    print self.shared_data
 
         # return when all threads have finished
         for t in tasks:
             t.join()
         logger.debug("SimpleDaemon returning")
 
-    def _hex_chars(self, n):
-        """
-        @param n: length required
-        @return: string of hex characters
-        """
-        hex_chars = '0123456789abcdef'
-        while n > len(hex_chars):
-            hex_chars += hex_chars
-        hex_chars = hex_chars[0:n]
-        return hex_chars
 
 
 sd = BackgroundTask(SimpleDaemon(), 'go', [4,])
