@@ -42,16 +42,18 @@ class BackgroundTask(threading.Thread):
         command_return = method(*self.method_args, **self.method_kwargs)
         logger.debug("BackgroundTask returning")
 
-class SimpleDaemonWorker(object):
+class SimpleDaemonWorker(threading.Thread):
     """
     class SimpleDaemon runs in a thread
     """
     def __init__(self, task_id, lock, data):
+        super(SimpleDaemonWorker, self).__init__()
         self.task_id = task_id
         self.shared_lock = lock
         self.shared_data = data
+        self.threads_shutdown_signal = False
 
-    def run_forever(self):
+    def run(self):
 
         # starting point
         counter = self.task_id
@@ -67,6 +69,10 @@ class SimpleDaemonWorker(object):
 
             self.shared_lock.release()
             counter += 1
+
+            if self.threads_shutdown_signal:
+                print "got shutdown"
+                return
 
     def crypto_challenge(self, ch, count):
         """
@@ -102,19 +108,18 @@ class SimpleDaemon(Flask):
         super(SimpleDaemon, self).__init__(*args, **kwargs)
         self.shared_lock = threading.Lock()
         self.shared_data = {}
+        self.tasks = []
 
     def start_workers(self, num_threads):
 
-        tasks = [BackgroundTask(SimpleDaemonWorker(i,
-                                                   self.shared_lock,
-                                                   self.shared_data
-                                                   ),
-                               'run_forever'
-                               )
-                 for i in range(num_threads)
-                 ]
+        self.tasks = [SimpleDaemonWorker(  i,
+                                           self.shared_lock,
+                                           self.shared_data
+                                           )
+                      for i in range(num_threads)
+                      ]
 
-        for t in tasks:
+        for t in self.tasks:
             t.start()
 
         #self.run(debug=True, use_reloader=False)
@@ -130,12 +135,17 @@ class SimpleDaemon(Flask):
             print msg % (c, len(self.shared_data))
 
             self.shared_lock.release()
+            
+            if c > 9:
+                print "signaling shutdown"
+                for t in self.tasks:
+                    t.threads_shutdown_signal = True
 
-        # return when all threads have finished
-        #for t in tasks:
-        #    t.join()
-        #logger.debug("SimpleDaemon returning")
-
+                # return when all threads have finished
+                for t in self.tasks:
+                    t.join()
+                logger.debug("SimpleDaemon returning")
+                return
 
 app = SimpleDaemon(__name__)
 
