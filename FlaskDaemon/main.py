@@ -94,7 +94,9 @@ class SimpleDaemonWorker(object):
 
 class SimpleDaemon(Flask):
     """
-    run a few threads that do something and return results to a shared area
+    run a few threads that do something and return results to a shared_data
+    area.
+    go(..) and flask's own run(..) are run in separate threads.
     """
     def __init__(self, *args, **kwargs):
         super(SimpleDaemon, self).__init__(*args, **kwargs)
@@ -103,14 +105,13 @@ class SimpleDaemon(Flask):
 
     def start_workers(self, num_threads):
 
-        daemon_thread_count = 3
         tasks = [BackgroundTask(SimpleDaemonWorker(i,
                                                    self.shared_lock,
                                                    self.shared_data
                                                    ),
                                'run_forever'
                                )
-                 for i in range(daemon_thread_count)
+                 for i in range(num_threads)
                  ]
 
         for t in tasks:
@@ -120,22 +121,35 @@ class SimpleDaemon(Flask):
 
     def go(self):
         while True:
-            time.sleep(3.0)
-            print self.shared_data
+            time.sleep(2.0)
+
+            self.shared_lock.acquire()
+
+            c = reduce(lambda x, y: x+y, [len(v) for v in self.shared_data.values()])
+            msg = "crypto_challenge completed %s times by %s workers"
+            print msg % (c, len(self.shared_data))
+
+            self.shared_lock.release()
 
         # return when all threads have finished
-        for t in tasks:
-            t.join()
-        logger.debug("SimpleDaemon returning")
+        #for t in tasks:
+        #    t.join()
+        #logger.debug("SimpleDaemon returning")
 
 
 app = SimpleDaemon(__name__)
 
 @app.route("/")
 def hello():
+
+    current_app.shared_lock.acquire()
+
     r = "Hello World!"
     for task_id, completed in current_app.shared_data.iteritems():
         r += " %s : %s" % (task_id, str(len(completed)))
+
+    current_app.shared_lock.release()
+
     return r
 
 app.start_workers(4)
