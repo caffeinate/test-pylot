@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import hashlib
 import multiprocessing
+from multiprocessing import Manager
 import threading
 import time
 
@@ -27,13 +28,17 @@ def number_of_workers():
 
 
 #----------------------------
-from flask import Flask
+from flask import Flask, current_app
 app = Flask(__name__)
 
 @app.route("/")
 def hello():
+    print current_app.shared_data.keys()
     return "Hello World!"
 #----------------------------
+
+app.manager = Manager()
+app.shared_data = app.manager.dict()
 
 class BackgroundTask(threading.Thread):
     """
@@ -77,8 +82,8 @@ class SimpleDaemonWorker(object):
             self.shared_lock.acquire()
 
             if self.task_id not in self.shared_data:
-                self.shared_data[self.task_id] = []
-            self.shared_data[self.task_id].append((ch, reps))
+                self.shared_data[self.task_id] = ""#[]
+            self.shared_data[self.task_id] += ch #.append((ch, reps))
 
             self.shared_lock.release()
             counter += 1
@@ -111,9 +116,9 @@ class SimpleDaemon(object):
     """
     run a few threads that do something and return results to a shared area
     """
-    def __init__(self):
+    def __init__(self, d):
         self.shared_lock = threading.Lock()
-        self.shared_data = {}
+        self.shared_data = d
 
     def go(self, num_threads):
 
@@ -130,9 +135,9 @@ class SimpleDaemon(object):
         for t in tasks:
             t.start()
 
-        #while True:
-        #    time.sleep(5)
-        #    print self.shared_data
+        while True:
+            time.sleep(3.0)
+            print self.shared_data
 
         # return when all threads have finished
         for t in tasks:
@@ -141,7 +146,7 @@ class SimpleDaemon(object):
 
 
 
-sd = BackgroundTask(SimpleDaemon(), 'go', [4,])
+sd = BackgroundTask(SimpleDaemon(app.shared_data), 'go', [4,])
 sd.start()
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
@@ -160,11 +165,14 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
     def load(self):
         return self.application
 
+app_background = BackgroundTask(app, 'run', [], {'debug':True, 'use_reloader':False})
+app_background.start()
 
-if __name__ == '__main__':
-    options = {
-        'bind': '%s:%s' % ('127.0.0.1', '8080'),
-        'workers': number_of_workers(),
-    }
-    logger.debug("StandaloneApplication running")
-    StandaloneApplication(app, options).run()
+
+# if __name__ == '__main__':
+#     options = {
+#         'bind': '%s:%s' % ('127.0.0.1', '8080'),
+#         'workers': number_of_workers(),
+#     }
+#     logger.debug("StandaloneApplication running")
+#     StandaloneApplication(app, options).run()
