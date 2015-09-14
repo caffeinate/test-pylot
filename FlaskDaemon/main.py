@@ -3,15 +3,15 @@ Created on 10 Sep 2015
 
 @author: si
 '''
-
-from flask import Flask, current_app
 import hashlib
-
+import logging
 import threading
 import time
 
+from flask import Flask, current_app
+from werkzeug.serving import run_simple
 
-import logging
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
@@ -71,7 +71,7 @@ class SimpleDaemonWorker(threading.Thread):
             counter += 1
 
             if self.threads_shutdown_signal:
-                print "got shutdown"
+                logger.debug("worker thread [%s] got shutdown" % self.task_id)
                 return
 
     def crypto_challenge(self, ch, count):
@@ -109,6 +109,7 @@ class SimpleDaemon(Flask):
         self.shared_lock = threading.Lock()
         self.shared_data = {}
         self.tasks = []
+        self.shutdown_after_tasks_count = 900 # after X tasks completed
 
     def start_workers(self, num_threads):
 
@@ -122,9 +123,20 @@ class SimpleDaemon(Flask):
         for t in self.tasks:
             t.start()
 
-        #self.run(debug=True, use_reloader=False)
+    def start_webserver(self):
+        """
+        Run websever in separate thread.
+        """
+        # Flask's run(..) uses werkzeug.serving.run_simple but doesn't expose
+        # all arguments.
+        webserver = BackgroundTask(self, '_start_webserver')
+        webserver.setDaemon(True)
+        webserver.start()
 
-    def go(self):
+    def _start_webserver(self):
+        run_simple('127.0.0.1', 5000, self, use_reloader=False, use_debugger=False)
+
+    def run_forever(self):
         while True:
             time.sleep(2.0)
 
@@ -136,8 +148,8 @@ class SimpleDaemon(Flask):
 
             self.shared_lock.release()
             
-            if c > 9:
-                print "signaling shutdown"
+            if c > self.shutdown_after_tasks_count:
+                logger.info("signaling shutdown to worker threads")
                 for t in self.tasks:
                     t.threads_shutdown_signal = True
 
@@ -163,10 +175,7 @@ def hello():
     return r
 
 app.start_workers(4)
-
-sd = BackgroundTask(app, 'run', [], {'debug':True, 'use_reloader':False})
-sd.start()
-
-app.go()
+app.start_webserver()
+app.run_forever()
 
 
