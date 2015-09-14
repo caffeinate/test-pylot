@@ -79,7 +79,7 @@ class SimpleDaemonWorker(threading.Thread):
         @param ch: ascii character found in an md5sum
 
         return an int which is the length of a string composed of 'ch'
-        which has the md5sum starting with count number of 'ch' 
+        which has the md5sum starting with count number of 'ch'
 
         e.g.
         >>> crypto_challenge('a',3)
@@ -87,16 +87,16 @@ class SimpleDaemonWorker(threading.Thread):
 
         [si@buru ~]$ echo -n aaaaaaaaaaaaaaaaaaaaaaaaaaa | md5sum
         aaab9c59a88bf0bdfcb170546c5459d6  -
-        [si@buru ~]$ 
+        [si@buru ~]$
 
-        inspired by the bitcoin mining algorithm. 
+        inspired by the bitcoin mining algorithm.
         """
-        s=""
+        s = ""
         while(True):
             md5 = hashlib.md5(s).hexdigest()
             if md5[0:count] == str(ch) * count:
                 return (ch, len(s))
-            s+=ch 
+            s += ch
 
 class SimpleDaemon(Flask):
     """
