@@ -106,21 +106,28 @@ class SimpleDaemon(Flask):
     """
     def __init__(self, *args, **kwargs):
         super(SimpleDaemon, self).__init__(*args, **kwargs)
-        self.shared_lock = threading.Lock()
-        self.shared_data = {}
-        self.tasks = []
-        self.shutdown_after_tasks_count = 900 # after X tasks completed
+
+        class SimpleDaemonAttribs(object):
+            def __init__(self):
+                self.shared_lock = None
+                self.shared_data = {}
+                self.tasks = []
+                self.shutdown_after_tasks_count = 0
+
+        self.daemonAttribs = SimpleDaemonAttribs()
+        self.daemonAttribs.shared_lock = threading.Lock()
+        self.daemonAttribs.shutdown_after_tasks_count = 900 # after X tasks completed
 
     def start_workers(self, num_threads):
 
-        self.tasks = [SimpleDaemonWorker(  i,
-                                           self.shared_lock,
-                                           self.shared_data
+        self.daemonAttribs.tasks = [SimpleDaemonWorker(  i,
+                                           self.daemonAttribs.shared_lock,
+                                           self.daemonAttribs.shared_data
                                            )
                       for i in range(num_threads)
                       ]
 
-        for t in self.tasks:
+        for t in self.daemonAttribs.tasks:
             t.start()
 
     def start_webserver(self):
@@ -134,27 +141,37 @@ class SimpleDaemon(Flask):
         webserver.start()
 
     def _start_webserver(self):
-        run_simple('127.0.0.1', 5000, self, use_reloader=False, use_debugger=False)
+
+        # WARNING - it is essential that processes=1 - all of the
+        # simple daemon assumes threaded, not-interprocess locking
+        # is being used.
+
+        run_simple('127.0.0.1', 5000, self,
+                   use_reloader=False,
+                   use_debugger=False,
+                   processes=1
+                   )
 
     def run_forever(self):
         while True:
             time.sleep(2.0)
 
-            self.shared_lock.acquire()
+            self.daemonAttribs.shared_lock.acquire()
 
-            c = reduce(lambda x, y: x+y, [len(v) for v in self.shared_data.values()])
+            c = reduce(lambda x, y: x+y,
+                       [len(v) for v in self.daemonAttribs.shared_data.values()])
             msg = "crypto_challenge completed %s times by %s workers"
-            print msg % (c, len(self.shared_data))
+            print msg % (c, len(self.daemonAttribs.shared_data))
 
-            self.shared_lock.release()
+            self.daemonAttribs.shared_lock.release()
             
-            if c > self.shutdown_after_tasks_count:
+            if c > self.daemonAttribs.shutdown_after_tasks_count:
                 logger.info("signaling shutdown to worker threads")
-                for t in self.tasks:
+                for t in self.daemonAttribs.tasks:
                     t.threads_shutdown_signal = True
 
                 # return when all threads have finished
-                for t in self.tasks:
+                for t in self.daemonAttribs.tasks:
                     t.join()
                 logger.debug("SimpleDaemon returning")
                 return
@@ -164,13 +181,13 @@ app = SimpleDaemon(__name__)
 @app.route("/")
 def hello():
 
-    current_app.shared_lock.acquire()
+    current_app.daemonAttribs.shared_lock.acquire()
 
     r = "Hello World!"
-    for task_id, completed in current_app.shared_data.iteritems():
+    for task_id, completed in current_app.daemonAttribs.shared_data.iteritems():
         r += " %s : %s" % (task_id, str(len(completed)))
 
-    current_app.shared_lock.release()
+    current_app.daemonAttribs.shared_lock.release()
 
     return r
 
