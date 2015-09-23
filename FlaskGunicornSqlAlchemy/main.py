@@ -1,24 +1,15 @@
 from __future__ import unicode_literals
 
 import multiprocessing
-
 import gunicorn.app.base
 
 from gunicorn.six import iteritems
 
+from flask_app import create_app
 
 def number_of_workers():
     return (multiprocessing.cpu_count() * 2) + 1
-
-
-#----------------------------
-from flask import Flask, current_app
-app = Flask(__name__)
-
-@app.route("/")
-def hello():
-    return "Hello World!"
-#----------------------------
+    #return 2
 
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
@@ -42,6 +33,10 @@ if __name__ == '__main__':
     options = {
         'bind': '%s:%s' % ('127.0.0.1', '8080'),
         'workers': number_of_workers(),
+        'threads': 5,
+        'keepalive' : 2,
+        'worker_class' : 'gevent',
     }
+    app = create_app('config.Config')
     StandaloneApplication(app, options).run()
 
