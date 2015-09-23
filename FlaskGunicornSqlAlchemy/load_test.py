@@ -11,6 +11,8 @@ from threading import Thread
 import urllib2
 import httplib, urllib
 from Queue import Queue
+import threading
+import os
 
 import logging
 logger = logging.getLogger(__name__)
@@ -19,6 +21,24 @@ logger = logging.getLogger(__name__)
 API_HOST = '127.0.0.1'
 API_PORT = 8080
 API_URL = "http://%s:%s/" % (API_HOST, API_PORT)
+
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, DateTime, Enum
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+Base = declarative_base()
+from config import Config
+engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
+#engine.pool._use_threadlocal = True
+
+class Foo(Base):
+    __tablename__ = 'foo'
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String(200))
+    proc_id = Column(Integer)
+    thread_name = Column(String(20))
+
 
 class LoadTest(object):
     """
@@ -114,6 +134,61 @@ class TestUser(Thread):
         #print msg
 
     def run(self):
+        return self.run_sqlalchemy_test()
+
+    def run_sqlalchemy_test(self):
+        """
+        @return: dictionary of stats to be collected by main process
+        """
+        stats = {   'return_codes' : {},
+                    'requests_made': self.remaining_request,
+                    'total_seconds_waiting' : 0.0, # waiting for requests
+                 }
+        
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        request_verb = "POST"
+        #request_verb = "GET"
+
+        stats['return_codes'][200] = 0
+        stats['return_codes'][404] = 0
+
+        while self.remaining_request > 0:
+
+            # sleep for average of half a second
+            #time.sleep(random.random())
+
+            start_time = time.time()
+
+            if request_verb == "GET":
+                foo_id = int(random.random()*3700)
+                try:
+                    foo = session.query(Foo).filter_by(id=foo_id).one()
+                    if len(foo.title) < 1:
+                        print 'fail'
+                    stats['return_codes'][200] += 1
+                except NoResultFound:
+                    stats['return_codes'][404] += 1
+
+            else:
+                r = {   'title' : hashlib.md5(str(random.random())).hexdigest()[0:6],
+                        'proc_id' : str(os.getpid()),
+                        'thread_name' : threading.current_thread().name,
+                     }
+                foo = Foo(**r)
+                session.add(foo)
+                session.commit()
+
+            end_time = time.time()
+            
+            stats['total_seconds_waiting'] += end_time-start_time
+            self.remaining_request -= 1
+
+        self.logger("Thread %s finished: %s" % (self.user_id, stats))
+        self.stats_queue.put(stats, False)
+
+    def run_api_test(self):
         """
         @return: dictionary of stats to be collected by main process
         """
@@ -189,9 +264,8 @@ class TestUser(Thread):
         self.stats_queue.put(stats, False)
 
 
-
 if __name__ == '__main__':
-    test_users_count = 50
+    test_users_count = 15
     requests_per_user = 25
     read_to_write_ratio = 90./10.
     l = LoadTest(test_users_count, requests_per_user, read_to_write_ratio)
