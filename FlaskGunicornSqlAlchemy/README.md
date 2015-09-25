@@ -11,6 +11,10 @@ Each simulated user connection will make a combination of read and write request
 1. Transaction
 1. Optimistic
 
+### Engine
+1. InnoDB
+1. MyISAM
+
 ### HTTP
 1. 1.0
 1. 1.1 with keep alive

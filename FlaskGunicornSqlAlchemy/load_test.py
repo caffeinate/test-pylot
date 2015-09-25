@@ -134,7 +134,8 @@ class TestUser(Thread):
         #print msg
 
     def run(self):
-        return self.run_sqlalchemy_test()
+        #return self.run_sqlalchemy_test()
+        return self.run_api_test()
 
     def run_sqlalchemy_test(self):
         """
@@ -201,8 +202,8 @@ class TestUser(Thread):
         #request_mode = "urllib2"
         request_mode = "httplib"
         
-        request_verb = "POST"
-        #request_verb = "GET"
+        #request_verb = "POST"
+        request_verb = "GET"
         
         if request_mode == "httplib":
             conn = httplib.HTTPConnection(API_HOST, API_PORT)
