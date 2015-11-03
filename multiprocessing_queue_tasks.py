@@ -47,10 +47,12 @@ class QueueExecute(object):
     >>> qe.join()
     
     """
-    def __init__(self, number_procs, map_func):
+    def __init__(self, number_procs=0, map_func=None):
         """
         @param number_procs: int
         @param map_func: function which takes one argument
+
+        @see add_worker(..)
         """
         self.process_table = []
         self.task_queue = Queue()
@@ -62,9 +64,39 @@ class QueueExecute(object):
         self.n_results_from_queue = 0
         self.print_log = False
 
+        def queue_execute_worker(tasks_q, results_q, func):
+
+            while True:
+                try:
+                    for c in tasks_q.get(block=False):
+                        # do some stuff
+                        result = func(c)
+                        # stick the ouput somewhere
+                        results_q.put((str(c), result))
+                        #tasks_q.task_done()
+                except Empty:
+                    if self.finished.value == 1:
+                        break
+                    # maybe replace sleep with a Condition
+                    self.log("sleeping")
+                    time.sleep(0.5)
+                    continue
+            self.log("worker ending")
+
+        self.worker = queue_execute_worker
+
     def log(self, msg):
         if self.print_log:
             print msg
+
+    def add_worker(self, func):
+        """
+        @param func: function or callable which takes single item as supplied
+                    to add_task_item(..)
+        """
+        proc_args = (self.task_queue, self.results_queue, func)
+        p = Process(target=self.worker, args=proc_args)
+        self.process_table.append(p)
 
     def add_task_item(self, x):
         self.n_added_to_queue += 1
@@ -106,31 +138,13 @@ class QueueExecute(object):
         """
         start processes executing
         """
-        def worker(tasks_q, results_q, func):
-            
-            while True:
-                try:
-                    for c in tasks_q.get(block=False):
-                        # do some stuff
-                        result = func(c)
-                        # stick the ouput somewhere
-                        results_q.put((str(c), result))
-                        #tasks_q.task_done()
-                except Empty:
-                    if self.finished.value == 1:
-                        break
-                    # maybe replace sleep with a Condition
-                    self.log("sleeping")
-                    time.sleep(0.5)
-                    continue
-            self.log("worker ending")
-
         proc_args = (self.task_queue, self.results_queue, self.map_func)
         for proc_index in range(self.number_procs):
-            p = Process(target=worker, args=proc_args)
+            p = Process(target=self.worker, args=proc_args)
             self.process_table.append(p)
-            p.start()
 
+        for p in self.process_table:
+            p.start()
 
 
 def crypto_challenge(ch):
