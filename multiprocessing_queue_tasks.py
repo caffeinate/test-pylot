@@ -71,7 +71,7 @@ class QueueExecute(object):
                     for c in tasks_q.get(block=False):
                         # do some stuff
                         result = func(c)
-                        # stick the ouput somewhere
+                        # stick the output somewhere
                         results_q.put((str(c), result))
                         #tasks_q.task_done()
                 except Empty:
@@ -177,6 +177,7 @@ if __name__ == '__main__':
 
     n_procs = 6
     qe = QueueExecute(n_procs, crypto_challenge)
+    qe.print_log = True
     qe.run()    
 
     for a in "0123456789abcdef":
