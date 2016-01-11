@@ -91,7 +91,6 @@ class Test(unittest.TestCase):
         After calling .run(), add another process.
         """
         qe = QueueExecute(3, crypto_challenge)
-        #qe.print_log = True
         for a in "0123456789abcdef":
             qe.add_task_item(a)
 
@@ -119,9 +118,19 @@ class Test(unittest.TestCase):
         worker_ids_l.sort()
         self.assertEqual(','.join(worker_ids_l), '0,1,2,3')
 
+    def test_zero_items(self):
+        """
+        If no items are given to process, it shouldn't hang waiting.
+        """
+        qe = QueueExecute(3, crypto_challenge)
+        #qe.print_log = True
+        qe.finished_adding_items()
+        qe.run()
+        for result in qe.get_result():
+            raise ValueError("Shouldn't get here")
 
-# TODO
-# adding 0 items still terminates
+        qe.join()
+        # should get here OK
 
 if __name__ == "__main__":
     unittest.main()
