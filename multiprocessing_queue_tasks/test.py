@@ -71,7 +71,7 @@ class Test(unittest.TestCase):
     def test_basic_usage(self):
         qe = QueueExecute(6, crypto_challenge)
         #qe.print_log = True
-        qe.run()    
+        qe.run()
 
         for a in "0123456789abcdef":
             qe.add_task_item(a)
@@ -81,11 +81,47 @@ class Test(unittest.TestCase):
         r = {}
         for result in qe.get_result():
             #print "got result", result
-            r[result[0]] = result[1]
+            r[result.input_as_string] = result.result_value
 
         qe.join()
         self.got_correct_results(r)
 
+    def test_extra_process(self):
+        """
+        After calling .run(), add another process.
+        """
+        qe = QueueExecute(3, crypto_challenge)
+        #qe.print_log = True
+        for a in "0123456789abcdef":
+            qe.add_task_item(a)
+
+        # finish called before any processing has been done
+        qe.finished_adding_items()
+
+        # add another worker (must be done before .run())
+        qe.add_worker(crypto_challenge)
+
+        # start processing
+        qe.run()
+
+        r = {}
+        worker_ids_seen = set()
+        for result in qe.get_result():
+            #print "got result", result
+            r[result.input_as_string] = result.result_value
+            worker_ids_seen.add(str(result.worker_id))
+
+        qe.join()
+        self.got_correct_results(r)
+
+        # All worker processes should have done some work
+        worker_ids_l = list(worker_ids_seen)
+        worker_ids_l.sort()
+        self.assertEqual(','.join(worker_ids_l), '0,1,2,3')
+
+
+# TODO
+# adding 0 items still terminates
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,7 @@ Created on 2 Nov 2015
 
 @author: si
 '''
+from collections import namedtuple
 from multiprocessing import Queue, Process, Value
 from Queue import Empty
 import time
@@ -55,15 +56,20 @@ class QueueExecute(object):
         """
         self.process_table = []
         self.task_queue = Queue()
-        self.results_queue = Queue() # is given tuples (task_item, task_result)
+        self.results_queue = Queue() # is given tuples
+                                    # ( worker_id,
+                                    #   task_item (converted to string),
+                                    #   task_result
+                                    # )
         self.map_func = map_func
         self.number_procs = number_procs
         self.finished = Value('i', 0) # indicates no further input will be given
+        self.processing_started = Value('i', 0)
         self.n_added_to_queue = 0
         self.n_results_from_queue = 0
         self.print_log = False
 
-        def queue_execute_worker(tasks_q, results_q, func):
+        def queue_execute_worker(tasks_q, results_q, func, worker_id):
 
             while True:
                 try:
@@ -71,16 +77,22 @@ class QueueExecute(object):
                         # do some stuff
                         result = func(c)
                         # stick the output somewhere
-                        results_q.put((str(c), result))
+                        results_q.put((worker_id, str(c), result))
                         #tasks_q.task_done()
                 except Empty:
-                    if self.finished.value == 1:
-                        break
+                    if self.finished.value == 1 \
+                        and self.processing_started.value == 1:
+                        # possible for processing_started to be set between
+                        # tasks_q.get() and exception
+                        time.sleep(0.1)
+                        if tasks_q.qsize() == 0:
+                            break
                     # maybe replace sleep with a Condition
-                    self.log("sleeping")
-                    time.sleep(0.5)
+                    self.log("worker %s sleeping..." % worker_id)
+                    time.sleep(0.25)
                     continue
-            self.log("worker ending")
+
+            self.log("worker %s ending" % worker_id)
 
         self.worker = queue_execute_worker
 
@@ -90,10 +102,13 @@ class QueueExecute(object):
 
     def add_worker(self, func):
         """
+        Add a single worker. Must be called before .run()
+
         @param func: function or callable which takes single item as supplied
                     to add_task_item(..)
         """
-        proc_args = (self.task_queue, self.results_queue, func)
+        worker_id = len(self.process_table)
+        proc_args = (self.task_queue, self.results_queue, func, worker_id)
         p = Process(target=self.worker, args=proc_args)
         self.process_table.append(p)
 
@@ -103,24 +118,43 @@ class QueueExecute(object):
     
     def get_result(self):
         """
-        generator
+        generator yielding each item in self.results_queue as namedtuple
+        with fields-
+
+        * process_id
+        * result_value
+        * input_as_string
+
         """
+        ResultItem = namedtuple('ResultItem', ['worker_id',
+                                               'result_value',
+                                               'input_as_string'
+                                               ]
+                                )
         while True:
             try:
                 r = self.results_queue.get(block=False)
                 self.n_results_from_queue += 1
-                yield r
+                yield ResultItem(worker_id=r[0],
+                                 result_value=r[2],
+                                 input_as_string=r[1]
+                                 )
             except Empty:
                 if self.finished.value == 1\
                     and self.n_added_to_queue == self.n_results_from_queue:
                     break
-                self.log("sleeping")
+                self.log("results sleeping")
                 # maybe replace sleep with a Condition
-                time.sleep(0.5)
+                time.sleep(0.25)
                 continue
         return
 
     def finished_adding_items(self):
+        """
+        Signal that all items have been added and process should end when
+        all items have been processed. 
+        """
+        self.log("signal to finish recieved")
         self.finished.value = 1
     
     def join(self):
@@ -136,11 +170,17 @@ class QueueExecute(object):
     def run(self):
         """
         start processes executing
+
+        this method isn't thread safe
         """
-        proc_args = (self.task_queue, self.results_queue, self.map_func)
+        proc_table_size = len(self.process_table)
         for proc_index in range(self.number_procs):
+            proc_args = (self.task_queue, self.results_queue, self.map_func,
+                         proc_index+proc_table_size)
             p = Process(target=self.worker, args=proc_args)
             self.process_table.append(p)
 
         for p in self.process_table:
             p.start()
+
+        self.processing_started.value = 1
