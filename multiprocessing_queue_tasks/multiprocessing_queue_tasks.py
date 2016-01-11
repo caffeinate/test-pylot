@@ -3,7 +3,6 @@ Created on 2 Nov 2015
 
 @author: si
 '''
-import hashlib
 from multiprocessing import Queue, Process, Value
 from Queue import Empty
 import time
@@ -145,50 +144,3 @@ class QueueExecute(object):
 
         for p in self.process_table:
             p.start()
-
-
-def crypto_challenge(ch):
-    """
-    @param ch: ascii character found in an md5sum
-
-    return an int which is the length of a string composed of 'ch'
-    which has the md5sum starting with count number of 'ch'
-
-    e.g.
-    >>> crypto_challenge('a',3)
-    27
-
-    [si@buru ~]$ echo -n aaaaaaaaaaaaaaaaaaaaaaaaaaa | md5sum
-    aaab9c59a88bf0bdfcb170546c5459d6  -
-    [si@buru ~]$
-
-    inspired by the bitcoin mining algorithm.
-    """
-    count = 3 # complexity, lower the number = quicker
-
-    s = ""
-    while(True):
-        md5 = hashlib.md5(s).hexdigest()
-        if md5[0:count] == str(ch) * count:
-            return len(s)
-        s += ch
-
-if __name__ == '__main__':
-
-    n_procs = 6
-    qe = QueueExecute(n_procs, crypto_challenge)
-    qe.print_log = True
-    qe.run()    
-
-    for a in "0123456789abcdef":
-        qe.add_task_item(a)
-
-    #time.sleep(3.)    
-    qe.finished_adding_items()
-
-    for result in qe.get_result():
-        print "got result", result
-
-    qe.join()
-
-    print "process completed"
