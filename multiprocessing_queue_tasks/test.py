@@ -5,6 +5,7 @@ Created on 11 Jan 2016
 '''
 import copy
 import hashlib
+import pickle
 import unittest
 
 from multiprocessing_queue_tasks import QueueExecute
@@ -35,6 +36,40 @@ def crypto_challenge(ch):
             return len(s)
         s += ch
 
+def crypto_challenge_attrib_based(a):
+    return crypto_challenge(a.item)
+
+class AttribBased(object):
+    """
+    dot attrib access to variables in a way which might not serialise.
+    """
+    def __init__(self, data=None):
+        if data:
+            self.att = data
+        else:
+            self.att = {}
+
+    def __repr__(self):
+        d = ', '.join(["%s:%s" % (k,v) for k,v in self.att.iteritems()])
+        return '<AttribBased %s>' % d
+
+    def __setattr__(self, attr, val):
+        if attr != 'att':
+            self.att[attr] = val
+        else:
+            super(AttribBased, self).__setattr__(attr, val)
+
+    def __getattr__(self, attr):
+        if attr == 'att':
+            return {}
+        return self.att[attr]
+
+    def __getstate__(self):
+        return self.att
+
+    def __setstate__(self, state):
+        self.att = state
+
 class Test(unittest.TestCase):
 
     def got_correct_results(self, results):
@@ -42,7 +77,6 @@ class Test(unittest.TestCase):
         @param results: dictionary
         """
         r = copy.copy(results)
-
         # known correct results
         expected = [('0', 126),
                     ('3', 763),
@@ -81,7 +115,7 @@ class Test(unittest.TestCase):
         r = {}
         for result in qe.get_result():
             #print "got result", result
-            r[result.input_as_string] = result.result_value
+            r[result.input] = result.result_value
 
         qe.join()
         self.got_correct_results(r)
@@ -107,7 +141,7 @@ class Test(unittest.TestCase):
         worker_ids_seen = set()
         for result in qe.get_result():
             #print "got result", result
-            r[result.input_as_string] = result.result_value
+            r[result.input] = result.result_value
             worker_ids_seen.add(str(result.worker_id))
 
         qe.join()
@@ -131,6 +165,31 @@ class Test(unittest.TestCase):
 
         qe.join()
         # should get here OK
+
+    def test_attrib_based(self):
+
+        qe = QueueExecute(3, crypto_challenge_attrib_based)
+        #qe.print_log = True
+        for a in "0123456789abcdef":
+            ab = AttribBased(data={'item':a})
+            #ab_str = pickle.dumps(ab)
+            qe.add_task_item(ab)
+
+        qe.run()
+        qe.finished_adding_items()
+
+        r = {}
+        for result in qe.get_result():
+            r[result.input.item] = result.result_value
+
+        qe.join()
+        self.got_correct_results(r)
+
+    def test_attrib_class(self):
+        ab = AttribBased({'item':'xx'})
+        p = pickle.dumps(ab)
+        ab2 = pickle.loads(p)
+        self.assertEqual('xx', ab2.item)
 
 if __name__ == "__main__":
     unittest.main()

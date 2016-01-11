@@ -73,12 +73,12 @@ class QueueExecute(object):
 
             while True:
                 try:
-                    for c in tasks_q.get(block=False):
-                        # do some stuff
-                        result = func(c)
-                        # stick the output somewhere
-                        results_q.put((worker_id, str(c), result))
-                        #tasks_q.task_done()
+                    input_item = tasks_q.get(block=False)
+                    # do some stuff
+                    result = func(input_item)
+                    # stick the output somewhere
+                    results_q.put((worker_id, input_item, result))
+                    #tasks_q.task_done()
                 except Empty:
                     if self.finished.value == 1 \
                         and self.processing_started.value == 1:
@@ -123,12 +123,12 @@ class QueueExecute(object):
 
         * process_id
         * result_value
-        * input_as_string
+        * input
 
         """
         ResultItem = namedtuple('ResultItem', ['worker_id',
                                                'result_value',
-                                               'input_as_string'
+                                               'input'
                                                ]
                                 )
         while True:
@@ -137,7 +137,7 @@ class QueueExecute(object):
                 self.n_results_from_queue += 1
                 yield ResultItem(worker_id=r[0],
                                  result_value=r[2],
-                                 input_as_string=r[1]
+                                 input=r[1]
                                  )
             except Empty:
                 if self.finished.value == 1\
