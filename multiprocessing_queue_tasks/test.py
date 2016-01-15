@@ -39,6 +39,14 @@ def crypto_challenge(ch):
 def crypto_challenge_attrib_based(a):
     return crypto_challenge(a.item)
 
+class CallBasedCryptoChallenge(object):
+
+    def __init__(self, task_id):
+        self.task_id = task_id
+
+    def __call__(self, *args):
+        return crypto_challenge(*args)
+
 class AttribBased(object):
     """
     dot attrib access to variables in a way which might not serialise.
@@ -190,6 +198,38 @@ class Test(unittest.TestCase):
         p = pickle.dumps(ab)
         ab2 = pickle.loads(p)
         self.assertEqual('xx', ab2.item)
+
+    def test_callable(self):
+        """
+        Workers use a callable object instead of a function.
+        """
+        qe = QueueExecute()
+        for a in "0123456789abcdef":
+            qe.add_task_item(a)
+
+        # finish called before any processing has been done
+        qe.finished_adding_items()
+
+        for i in range(2):
+            qe.add_worker(CallBasedCryptoChallenge(i))
+
+        # start processing
+        qe.run()
+
+        r = {}
+        worker_ids_seen = set()
+        for result in qe.get_result():
+            #print "got result", result
+            r[result.input] = result.result_value
+            worker_ids_seen.add(str(result.worker_id))
+
+        qe.join()
+        self.got_correct_results(r)
+
+        # All worker processes should have done some work
+        worker_ids_l = list(worker_ids_seen)
+        worker_ids_l.sort()
+        self.assertEqual(','.join(worker_ids_l), '0,1')
 
 if __name__ == "__main__":
     unittest.main()
