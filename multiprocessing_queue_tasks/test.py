@@ -132,7 +132,7 @@ class Test(unittest.TestCase):
         """
         After calling .run(), add another process.
         """
-        qe = QueueExecute(3, crypto_challenge)
+        qe = QueueExecute(2, crypto_challenge)
         for a in "0123456789abcdef":
             qe.add_task_item(a)
 
@@ -158,7 +158,7 @@ class Test(unittest.TestCase):
         # All worker processes should have done some work
         worker_ids_l = list(worker_ids_seen)
         worker_ids_l.sort()
-        self.assertEqual(','.join(worker_ids_l), '0,1,2,3')
+        self.assertEqual(','.join(worker_ids_l), '0,1,2')
 
     def test_zero_items(self):
         """
@@ -230,6 +230,99 @@ class Test(unittest.TestCase):
         worker_ids_l = list(worker_ids_seen)
         worker_ids_l.sort()
         self.assertEqual(','.join(worker_ids_l), '0,1')
+
+    def test_duplicate_items(self):
+        """
+        one item on task_queue should be one item off the results_queue
+        """
+
+        def no_work(i):
+            return i
+
+        qe = QueueExecute(6, no_work)
+        #qe.print_log = True
+        qe.run()
+
+        input_size = 200
+        for a in range(input_size):
+            qe.add_task_item(a)
+
+        qe.finished_adding_items()
+
+        r = {}
+        for result in qe.get_result():
+            #print "got result", result
+            r[result.input] = result.result_value
+
+        qe.join()
+        self.assertEqual(len(r.keys()), input_size)
+
+    def test_separate_generator(self):
+        """
+        add some items to input queue and then "one in one out" of
+        QueueExecute
+        """
+
+        def no_work(i):
+            return i
+
+        def generator():
+            i=0
+            while True:
+                yield i
+                i += 1
+
+
+        parallel_processes = 5
+        records_generator = generator()
+
+        queue_processor = QueueExecute()
+        for task_id in range(parallel_processes):
+
+            sub_processor = no_work
+            queue_processor.add_worker(sub_processor)
+
+        queue_processor.run()
+
+
+        initial_buffer_size = parallel_processes * 5
+        r_count = 0
+        for _record in records_generator:
+            #print "pre sending:%s" % _record
+            queue_processor.add_task_item(_record)
+            r_count += 1
+            if r_count >= initial_buffer_size:
+                break
+
+        result_generator = queue_processor.get_result()
+        # one in one out from here
+        r = []
+        for _record in records_generator:
+
+            #print "post sending:%s" % _record
+
+            # careful - a StopIteration here would be a fail because there
+            # are def. results pending
+            result = next(result_generator)
+            r.append(result.result_value)
+
+            if _record > 100:
+                break
+
+            # add record to queue
+            queue_processor.add_task_item(_record)
+
+        # end of input stream signalled to sub-processes
+        queue_processor.finished_adding_items()
+
+        # wait for remaining results
+        for result in result_generator:
+            r.append(result.result_value)
+
+        # wait for processes to finish
+        queue_processor.join()
+
+        self.assertEqual(101, len(r))
 
 if __name__ == "__main__":
     unittest.main()
