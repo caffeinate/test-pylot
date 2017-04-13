@@ -6,6 +6,7 @@ Create a load of threads and test a web engine by making requests from each thre
 import json
 import hashlib
 import random
+import requests
 import time
 from threading import Thread
 import urllib2
@@ -54,7 +55,10 @@ class LoadTest(object):
         
         self.stats = {  'return_codes' : {},
                         'requests_made' : 0,
-                        'total_seconds_waiting' : 0.0
+                        'total_seconds_waiting' : 0.0,
+                        'read_requests': 0,
+                        'write_requests': 0,
+                        'http_by_proc-thread': set(),
                     }
         self.stats_q = Queue(0)
 
@@ -104,6 +108,10 @@ class LoadTest(object):
                 self.stats['return_codes'][http_status] += count
             self.stats['requests_made'] += user_stats['requests_made']
             self.stats['total_seconds_waiting'] += user_stats['total_seconds_waiting']
+            self.stats['read_requests'] += user_stats['read_requests']
+            self.stats['write_requests'] += user_stats['write_requests']
+            self.stats['http_by_proc-thread'] = self.stats['http_by_proc-thread']\
+                                                .union(user_stats['http_by_proc-thread'])
 
         print self.stats
         # time_taken is real time not CPU
@@ -128,6 +136,7 @@ class TestUser(Thread):
         self.stats_queue = stats_queue
         self.user_id = user_id
         self.read_to_write_ratio = read_to_write_ratio
+        self.write_if_below = 1./read_to_write_ratio
 
     def logger(self, msg):
         logger.info(msg)
@@ -196,28 +205,39 @@ class TestUser(Thread):
         stats = {   'return_codes' : {},
                     'requests_made': self.remaining_request,
                     'total_seconds_waiting' : 0.0, # waiting for requests
+                    'read_requests': 0,
+                    'write_requests': 0,
+                    'http_by_proc-thread': set(),
                  }
         url = self.base_url+'foo/'
         
         #request_mode = "urllib2"
-        request_mode = "httplib"
-        
-        #request_verb = "POST"
-        request_verb = "GET"
-        
+        #request_mode = "httplib"
+        request_mode = "requests"
+
         if request_mode == "httplib":
             conn = httplib.HTTPConnection(API_HOST, API_PORT)
+        
+        if request_mode == "requests":
+            conn = requests.session()
+            conn.keep_alive = False
 
         while self.remaining_request > 0:
+
+            if random.random() < self.write_if_below:
+                request_verb = "POST"
+                stats['write_requests'] += 1
+            else:
+                request_verb = "GET"
+                stats['read_requests'] += 1
 
             # sleep for average of half a second
             #time.sleep(random.random())
 
             if request_verb == "GET":
                 foo_id = int(random.random()*3700)
-                url_get = 'foo/'+str(foo_id)+'/'
+                url_get = 'foox/'+str(foo_id)+'/'
                 url = self.base_url+url_get
-
 
             raw = { 'title' : hashlib.md5(str(random.random())).hexdigest()[0:6]
                  }
@@ -244,13 +264,32 @@ class TestUser(Thread):
                 else:
                     conn.request('POST', '/foo/', d, h)
                 response = conn.getresponse()
-                data = response.read()
+                if response.status == 200:
+                    data = json.loads(response.read())
+                    stats['http_by_proc-thread'].add(data['http_by_proc-thread'])
                 end_time = time.time()
                 http_status = response.status
                 #print data
 
-            stats['total_seconds_waiting'] += end_time-start_time
+            elif request_mode == "requests":
+                start_time = time.time()
+                if request_verb == "GET":
+                    r = conn.get(url)
+                else:
+                    h = {'Content-type': 'application/json'}
+                    r = conn.post(url,
+                               data=d,
+                               headers=h
+                               )
 
+                if r.status_code == 200:
+                    data = r.json()
+                    stats['http_by_proc-thread'].add(data['http_by_proc-thread'])
+                end_time = time.time()
+                http_status = r.status_code
+
+
+            stats['total_seconds_waiting'] += end_time-start_time
             
             if http_status not in stats['return_codes']:
                 stats['return_codes'][http_status] = 0
@@ -266,8 +305,8 @@ class TestUser(Thread):
 
 
 if __name__ == '__main__':
-    test_users_count = 15
-    requests_per_user = 25
+    test_users_count = 5
+    requests_per_user = 50
     read_to_write_ratio = 90./10.
     l = LoadTest(test_users_count, requests_per_user, read_to_write_ratio)
     l.go()   

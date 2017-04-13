@@ -32,10 +32,11 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 if __name__ == '__main__':
     options = {
         'bind': '%s:%s' % ('127.0.0.1', '8080'),
-        'workers': number_of_workers(),
-        'threads': 5,
-        'keepalive' : 2,
-        'worker_class' : 'gevent',
+        'workers': 5,
+        'threads': 10,
+        'keepalive': 1,
+        'worker_class': 'sync',
+        'log-level': 'debug',
     }
     app = create_app('config.Config')
     StandaloneApplication(app, options).run()

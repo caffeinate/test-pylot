@@ -2,7 +2,8 @@ class Config(object):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = "mysql://root:mypass@localhost/flask_gunicorn"
     SQLALCHEMY_ECHO=False
-
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_POOL_SIZE = 5
 
 class TestConfig(object):
     DEBUG = True
