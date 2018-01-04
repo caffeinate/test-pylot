@@ -5,6 +5,7 @@ Created on 2 Nov 2015
 @author: si
 '''
 from collections import namedtuple
+import hashlib
 from multiprocessing import Queue, Process, Value
 from Queue import Empty
 import time
@@ -76,7 +77,7 @@ class QueueExecute(object):
                 try:
                     input_item = tasks_q.get(block=False)
                     # do some stuff
-                    result = func(input_item)
+                    result = func(*input_item)
                     # stick the output somewhere
                     results_q.put((worker_id, input_item, result))
                     #tasks_q.task_done()
@@ -86,7 +87,7 @@ class QueueExecute(object):
                         # possible for processing_started to be set between
                         # tasks_q.get() and exception
                         time.sleep(0.1)
-                        if tasks_q.qsize() == 0:
+                        if tasks_q.empty():
                             break
                     # maybe replace sleep with a Condition
                     self.log("worker %s sleeping..." % worker_id)
@@ -185,3 +186,44 @@ class QueueExecute(object):
             p.start()
 
         self.processing_started.value = 1
+
+
+def crypto_challenge(ch, count):
+    """
+    @param ch: ascii character found in an md5sum
+
+    return an int which is the length of a string composed of 'ch'
+    which has the md5sum starting with count number of 'ch'
+
+    e.g.
+    >>> from celery_task import crypto_challenge
+    >>> crypto_challenge('a',3)
+    27
+
+    [si@buru ~]$ echo -n aaaaaaaaaaaaaaaaaaaaaaaaaaa | md5sum
+    aaab9c59a88bf0bdfcb170546c5459d6  -
+    [si@buru ~]$
+
+    inspired by the bitcoin mining algorithm.
+    """
+    s=""
+    while(True):
+        md5 = hashlib.md5(s).hexdigest()
+        if md5[0:count] == str(ch) * count:
+            return len(s)
+        s+='a'
+
+
+if __name__ == '__main__':
+    qe = QueueExecute(6, crypto_challenge)
+    qe.run()
+    for a in "0123456789abcdef":
+        qe.add_task_item((a, 4))
+
+    qe.finished_adding_items()
+    for result in qe.get_result():
+        print "got result", result
+
+    print "joining"
+    qe.join()
+    print "all done"
