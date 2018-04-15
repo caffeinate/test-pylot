@@ -106,7 +106,7 @@ class SensorsDb(object):
             
             for sensor in self.sensors:
                 r = sensor.get_reading()
-                self.log("Reading: {device},{value_type},{value_float}".format(**r))
+                self.log("Reading: {sensor_id},{value_type},{value_float}".format(**r))
                 self.store_reading(r)
 
             wait_for = self.sample_frequency - (time.time() - sampling_start_time)
