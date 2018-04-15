@@ -10,6 +10,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from model import Sensor
+
 Base = declarative_base()
 
 class AbstractSensorDecode(object):
@@ -40,10 +42,10 @@ class OneWireTemperatureDecode(AbstractSensorDecode):
         else:
             with open(self.device_path) as f:
                 sd = f.readlines()
-                if not sd[0].endswith("YES") or 't=' not in sd[1]:
+                if not sd[0].strip().endswith("YES") or 't=' not in sd[1]:
                     self.log("Can't read {} : {}".format(self.device_id, " : ".join(sd)))
                 else:
-                    parts = sd[1].split('t=')
+                    parts = sd[1].strip().split('t=')
                     temp = float(parts[1])/1000.
 
         return self.device_id, "temperature", temp 
@@ -83,6 +85,17 @@ class SensorsDb(object):
             DBSession = sessionmaker(bind=engine)
             self._db_session = DBSession()
         return self._db_session
+    
+    def store_reading(self, reading):
+        """
+        :param: reading (tuple) device_id, reading type, reading_value 
+        """
+        device_id, reading_type, reading_value = reading
+        r = Sensor(sensor_id = device_id,
+                   value_type = reading_value,
+                   value_float = reading_type)
+        self.db_session.add(r)
+        self.db_session.commit()
 
     def run_forever(self):
         
@@ -94,6 +107,7 @@ class SensorsDb(object):
             for sensor in self.sensors:
                 device, device_type, value = sensor.get_reading()
                 self.log("Reading: {},{},{}".format(device, device_type, value))
+                self.store_reading((device, device_type, value))
 
             wait_for = self.sample_frequency - (time.time() - sampling_start_time)
             if wait_for < 0:
@@ -105,10 +119,9 @@ class SensorsDb(object):
 if __name__ == '__main__':
     sensors_db = 'sqlite:////data/sensors.db'
     sdb = SensorsDb(sensors_db)
-    #sdb.create_db()
+    sdb.create_db()
 
     sdb.add_sensor(OneWireTemperatureDecode("28-0015231007ee"))
     sdb.add_sensor(OneWireTemperatureDecode("28-021571be4cff"))
     
     sdb.run_forever()
-    
