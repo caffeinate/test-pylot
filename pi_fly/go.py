@@ -78,7 +78,8 @@ class SensorsDb(object):
     
         if not os.access(self.sensors_db, os.R_OK):
             self.log("Creating new DB {}".format(self.sensors_db))
-            Base.metadata.create_all(engine)
+        # just update tables
+        Base.metadata.create_all(engine)
     
     @property
     def db_session(self):
