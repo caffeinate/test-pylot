@@ -48,7 +48,10 @@ class OneWireTemperatureDecode(AbstractSensorDecode):
                     parts = sd[1].strip().split('t=')
                     temp = float(parts[1])/1000.
 
-        return self.device_id, "temperature", temp 
+        return {'sensor_id': self.device_id,
+                'value_type': "temperature",
+                'value_float': temp
+                }
 
 
 class SensorsDb(object):
@@ -88,12 +91,9 @@ class SensorsDb(object):
     
     def store_reading(self, reading):
         """
-        :param: reading (tuple) device_id, reading type, reading_value 
+        :param: reading (dict) matching keys see :class:`Sensor` model 
         """
-        device_id, reading_type, reading_value = reading
-        r = Sensor(sensor_id = device_id,
-                   value_type = reading_value,
-                   value_float = reading_type)
+        r = Sensor(**reading)
         self.db_session.add(r)
         self.db_session.commit()
 
@@ -105,9 +105,9 @@ class SensorsDb(object):
             sampling_start_time = time.time()
             
             for sensor in self.sensors:
-                device, device_type, value = sensor.get_reading()
-                self.log("Reading: {},{},{}".format(device, device_type, value))
-                self.store_reading((device, device_type, value))
+                r = sensor.get_reading()
+                self.log("Reading: {device},{value_type},{value_float}".format(**r))
+                self.store_reading(r)
 
             wait_for = self.sample_frequency - (time.time() - sampling_start_time)
             if wait_for < 0:
