@@ -10,9 +10,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from model import Sensor
+from model import Sensor, Base
 
-Base = declarative_base()
 
 class AbstractSensorDecode(object):
     def __init__(self, *args, **kwargs):
