@@ -61,7 +61,7 @@ class SensorsDb(object):
         self.sensors_db = db_dsn
         self.log_to_stdout = True
         self._db_session = None
-        self.sample_frequency = 10 #5*60 # in seconds
+        self.sample_frequency = 5*60 # in seconds
         self.sensors = []
     
     def add_sensor(self, s):
