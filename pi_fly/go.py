@@ -117,6 +117,7 @@ class SensorsDb(object):
         
 
 if __name__ == '__main__':
+    # TODO - take from settings file
     sensors_db = 'sqlite:////data/sensors.db'
     sdb = SensorsDb(sensors_db)
     sdb.create_db()

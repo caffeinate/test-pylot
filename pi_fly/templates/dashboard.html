@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block body %}
+
+{%if collection_failure %}
+<div class="alert alert-danger" role="alert">
+  Sensor data collection has failed! Last reading was at {{last_read_at}}.
+</div>
+
+{%endif%}
+
+<h1>
+{%if bath_possible %}
+<button type="button" class="btn btn-success">
+{%else%}
+<button type="button" class="btn btn-info">
+{%endif%}
+  Water temperature <span class="badge badge-light">{{'%0.f' % water_temp|float}}&deg;C</span>
+</button>
+</h1>
+
+{% endblock %}
