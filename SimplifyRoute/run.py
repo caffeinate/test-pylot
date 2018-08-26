@@ -25,3 +25,7 @@ for coord in gpx.points:
         shortened_route.append(coord)
 
 print(len(shortened_route))
+
+output = GpxIo("/home/si/Desktop/output.gpx")
+output.add_points(shortened_route)
+output.write_gpx()
