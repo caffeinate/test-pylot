@@ -3,7 +3,7 @@ Created on 26 Aug 2018
 
 @author: si
 '''
-from SimplifyRoute.read_gpx import GpxIo
+from SimplifyRoute.gpx_io import GpxIo
 from SimplifyRoute.gis_utils import distance_on_unit_sphere
 
 distance_threshold = 0.2 # km
