@@ -27,6 +27,12 @@ class GpxIo(object):
                 for point in track_segment.findall('{}trkpt'.format(self.gpx_namespace)):
                     yield float(point.attrib['lat']), float(point.attrib['lon'])
 
+    def add_point(self, point):
+        """
+        :param: point tuple, lat,lng
+        """
+        self.points_cache.append(point)
+
     def add_points(self, points):
         """
         :param: points list of tuples (lat, lng)
