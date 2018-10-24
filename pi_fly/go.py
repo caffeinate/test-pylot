@@ -124,5 +124,5 @@ if __name__ == '__main__':
 
     sdb.add_sensor(OneWireTemperatureDecode("28-0015231007ee"))
     sdb.add_sensor(OneWireTemperatureDecode("28-021571be4cff"))
-    
+    sdb.add_sensor(OneWireTemperatureDecode("28-0517c16726ff")) # loft 2
     sdb.run_forever()
