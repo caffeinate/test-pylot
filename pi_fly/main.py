@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
 
     options = {
-        'bind': '%s:%s' % ('0.0.0.0', '8000'),
+        'bind': '%s:%s' % ('0.0.0.0', '80'),
         'workers': 2,
     }
     app = create_app('settings.%s_config.Config' % sys.argv[1])
