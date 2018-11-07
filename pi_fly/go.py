@@ -126,4 +126,6 @@ if __name__ == '__main__':
     sdb.add_sensor(OneWireTemperatureDecode("28-021571be4cff"))
     sdb.add_sensor(OneWireTemperatureDecode("28-0517c16726ff")) # loft 2
     sdb.add_sensor(OneWireTemperatureDecode("28-0517c1599eff")) # landing
+    sdb.add_sensor(OneWireTemperatureDecode("28-041783906fff")) # bottom of tank
     sdb.run_forever()
+
