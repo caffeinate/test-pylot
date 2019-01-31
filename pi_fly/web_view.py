@@ -5,7 +5,7 @@ Created on 15 Apr 2018
 '''
 from datetime import datetime
 
-from flask import Flask, Response, render_template
+from flask import Flask, Response, render_template, current_app
 from flask_sqlalchemy import SQLAlchemy
 
 from model import Sensor
@@ -28,7 +28,8 @@ def create_app(settings_class):
         d = datetime.utcnow() - last_reading.last_updated
         minutes_since_reading = d.total_seconds() / 60.
         page_vars = {'collection_failure': minutes_since_reading > 10.,
-                     'water_temp': last_reading.value_float,
+#                      'water_temp': last_reading.value_float,
+                     'water_temp': current_app.shared_data['counter'],
                      'bath_possible': last_reading.value_float > 45.,
                      'last_read_at': last_reading.last_updated,
                     }
