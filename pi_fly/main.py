@@ -13,7 +13,7 @@ import time
 import gunicorn.app.base
 from gunicorn.six import iteritems
 
-from web_view import create_app
+from pi_fly.web_view import create_app
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
