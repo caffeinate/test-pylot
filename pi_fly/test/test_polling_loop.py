@@ -12,6 +12,10 @@ from .test_base import BaseTest
 class TestPollingLoop(BaseTest):
 
     def test_device_read(self):
+        """
+        Poll a single (dummy) device once. Check a wiat time (for next loop)
+        is returned and check a value is read.
+        """
 
         scoreboard = ScoreBoard()
         devices = [DummyInput(name="fake_input")]

@@ -45,8 +45,12 @@ def run_forever(settings_label):
     scoreboard = ScoreBoard() # for storing sensor values
     app.sensor_scoreboard = scoreboard
 
+    # TODO read loops from config and make a Proc per loop
+
     counter_proc = Process(target=_counter, args=(scoreboard,))
     counter_proc.start()
+
+    # TODO make a Proc to store values into DB
 
     options = {
         'bind': '%s:%s' % ('0.0.0.0', app.config.get('HTTP_PORT', '80')),
