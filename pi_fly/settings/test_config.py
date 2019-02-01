@@ -7,9 +7,9 @@ from pi_fly.devices.dummy import DummyInput, DummyOutput
 class Config(BaseConfig):
     DEBUG=True
     SQLALCHEMY_DATABASE_URI = None # replaced with instance var in __init__
-    input_devices = [DummyInput(),
+    input_devices = [DummyInput(name="fake_input"),
                      ]
-    output_devices = [DummyOutput(),
+    output_devices = [DummyOutput(name="fake_output"),
                       ]
     DEVICES = input_devices + output_devices
     POLLING_LOOPS = [

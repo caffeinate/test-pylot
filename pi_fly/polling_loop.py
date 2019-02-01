@@ -16,10 +16,16 @@ class PollingLoop:
         self.sample_frequency = kwargs.pop('sample_frequency')
         self.devices = kwargs.pop('devices')
         self.description = kwargs.pop('description', None)
+        self.log_to_stdout = kwargs.pop('log_to_stdout', False)
 
         self.wait_time_total = 0.
         self.loop_count = 0
         self.loop_last_ran = None
+
+    def log(self, msg, level="INFO"):
+        # TODO wire this to top level's log
+        if self.log_to_stdout:
+            print("{}{}".format(level.ljust(10), msg))
 
     def _single_loop(self):
         """

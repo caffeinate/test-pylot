@@ -7,7 +7,7 @@ Created on 31 Jan 2019
 class AbstractDevice:
     def __init__(self, **kwargs):
         self.name = kwargs.pop('name')
-        self.log_to_stdout = kwargs.pop('log_to_stdout', True)
+        self.log_to_stdout = kwargs.pop('log_to_stdout', False)
         self.description = kwargs.pop('description', None)
 
     def log(self, msg, level="INFO"):
