@@ -31,21 +31,15 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
     def load(self):
         return self.application
 
+def run_forever(settings_label):
 
-if __name__ == '__main__':
-
-    if len(sys.argv) != 2:
-        msg = "usage: python main.py <settings label>\n"
-        sys.stderr.write(msg)
-        sys.exit(-1)
-    
     def _counter(shared_memory):
         
         while True:
             shared_memory['counter'] += 1
             time.sleep(2)
 
-    app = create_app('settings.%s_config.Config' % sys.argv[1])
+    app = create_app('settings.%s_config.Config' % settings_label)
     app.manager = Manager()
     app.shared_data = app.manager.dict()
     app.shared_data['counter'] = 0
@@ -59,3 +53,12 @@ if __name__ == '__main__':
     }
 
     StandaloneApplication(app, options).run()
+
+if __name__ == '__main__':
+
+    if len(sys.argv) != 2:
+        msg = "usage: python main.py <settings label>\n"
+        sys.stderr.write(msg)
+        sys.exit(-1)
+
+    run_forever(sys.argv[1])
