@@ -2,7 +2,7 @@ import os
 import tempfile
 
 from .global_config import BaseConfig
-from pi_fly.sensors.dummy_sensor import DummyInput, DummyOutput
+from pi_fly.devices.dummy import DummyInput, DummyOutput
 
 class Config(BaseConfig):
     DEBUG=True
@@ -12,9 +12,9 @@ class Config(BaseConfig):
     output_devices = [DummyOutput(),
                       ]
     DEVICES = input_devices + output_devices
-    SENSOR_LOOPS = [
-        {'loop_name': 'short_loop',
-         'minimum_cycle': .2, 
+    POLLING_LOOPS = [
+        {'name': 'short_loop',
+         'sample_frequency': .2,
          'devices': input_devices,
         }
         ]

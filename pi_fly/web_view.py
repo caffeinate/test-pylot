@@ -8,7 +8,7 @@ from datetime import datetime
 from flask import Flask, Response, render_template, current_app
 from flask_sqlalchemy import SQLAlchemy
 
-from model import Sensor
+from pi_fly.model import Sensor
 
 db = SQLAlchemy()
 
@@ -29,7 +29,7 @@ def create_app(settings_class):
         minutes_since_reading = d.total_seconds() / 60.
         page_vars = {'collection_failure': minutes_since_reading > 10.,
 #                      'water_temp': last_reading.value_float,
-                     'water_temp': current_app.shared_data['counter'],
+                     'water_temp': current_app.sensor_scoreboard.get_current_value('counter'),
                      'bath_possible': last_reading.value_float > 45.,
                      'last_read_at': last_reading.last_updated,
                     }

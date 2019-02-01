@@ -5,7 +5,7 @@ Created on 31 Jan 2019
 '''
 import time
 
-from .abstract_sensor import AbstractSensor
+from .abstract import AbstractSensor, AbstractOutput
 
 class DummyInput(AbstractSensor):
     """
@@ -23,5 +23,5 @@ class DummyInput(AbstractSensor):
                 'value_float': time.time()
                 }
 
-class DummyOutput:
+class DummyOutput(AbstractOutput):
     pass

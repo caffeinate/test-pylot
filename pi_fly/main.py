@@ -6,13 +6,14 @@ Created on 22 Apr 2018
 @author: si
 '''
 # from __future__ import unicode_literals
-from multiprocessing import Manager, Process
+from multiprocessing import Process
 import sys
 import time
 
 import gunicorn.app.base
 from gunicorn.six import iteritems
 
+from pi_fly.scoreboard import ScoreBoard
 from pi_fly.web_view import create_app
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
@@ -33,18 +34,18 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
 def run_forever(settings_label):
 
-    def _counter(shared_memory):
-        
+    def _counter(scoreboard):
+        counter_value = 0
         while True:
-            shared_memory['counter'] += 1
+            scoreboard.update_value('counter', counter_value)
+            counter_value += 1
             time.sleep(2)
 
     app = create_app('settings.%s_config.Config' % settings_label)
-    app.manager = Manager()
-    app.shared_data = app.manager.dict()
-    app.shared_data['counter'] = 0
+    scoreboard = ScoreBoard() # for storing sensor values
+    app.sensor_scoreboard = scoreboard
 
-    counter_proc = Process(target=_counter, args=(app.shared_data,))
+    counter_proc = Process(target=_counter, args=(scoreboard,))
     counter_proc.start()
 
     options = {

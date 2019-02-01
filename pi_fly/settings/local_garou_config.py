@@ -4,15 +4,19 @@ Created on 25 Jan 2019
 @author: si
 '''
 from .global_config import BaseConfig
-from pi_fly.sensors.dummy_sensor import Dummy
+from pi_fly.devices.dummy import DummyInput, DummyOutput
 
 class Config(BaseConfig):
     DEBUG=True
     SQLALCHEMY_DATABASE_URI = "sqlite:////home/si/Desktop/sensors.db"
-    SENSORS = [
-        {'loop_name': 'short_loop',
-         'minimum_cycle': 2., 
-         'devices': [Dummy(),
-                     ],
+    input_devices = [DummyInput(name="fake_input"),
+                     ]
+    output_devices = [DummyOutput(name="fake_output"),
+                      ]
+    DEVICES = input_devices + output_devices
+    POLLING_LOOPS = [
+        {'name': 'short_loop',
+         'sample_frequency': .2,
+         'devices': input_devices,
         }
         ]
