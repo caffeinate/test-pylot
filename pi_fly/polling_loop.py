@@ -5,6 +5,25 @@ Created on 1 Feb 2019
 '''
 import time
 
+def build_polling_loops(config, scoreboard):
+    """
+    :param: config dict. like config with `POLLING_LOOPS` as list of dicts.
+            probably a flask config object.
+
+    :returns: list of instantiated :class:`pi_fly.polling_loop.PollingLoop`s
+            ready from :method:`run_forever` to be run on.
+    """
+    if isinstance(config, dict):
+        loops_config = config['POLLING_LOOPS']
+    else:
+        loops_config = config.POLLING_LOOPS
+
+    p_loops = []
+    for pl_config in loops_config:
+        p_loops.append(PollingLoop(scoreboard, **pl_config))
+
+    return p_loops
+
 class PollingLoop:
     def __init__(self, scoreboard, **kwargs):
         """
