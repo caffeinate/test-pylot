@@ -4,7 +4,7 @@ Created on 1 Feb 2019
 @author: si
 '''
 from pi_fly.devices.dummy import DummyInput
-from pi_fly.polling_loop import PollingLoop, build_polling_loops
+from pi_fly.polling_loop import DevicesPollingLoop, build_polling_loops
 from pi_fly.scoreboard import ScoreBoard
 
 from .test_base import BaseTest
@@ -20,11 +20,11 @@ class TestPollingLoop(BaseTest):
         scoreboard = ScoreBoard()
         devices = [DummyInput(name="fake_input")]
         
-        p_loop = PollingLoop(scoreboard,
-                             name="a_loop",
-                             sample_frequency=0.1,
-                             devices=devices
-                             )
+        p_loop = DevicesPollingLoop(scoreboard,
+                                    name="a_loop",
+                                    sample_frequency=0.1,
+                                    devices=devices
+                                    )
         wait_time = p_loop._single_loop()
         self.assertTrue(wait_time >= 0)
 
