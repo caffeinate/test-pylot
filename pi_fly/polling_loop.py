@@ -3,7 +3,15 @@ Created on 1 Feb 2019
 
 @author: si
 '''
+import os
 import time
+
+# from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from pi_fly.model import Sensor, Base
+
 
 def build_polling_loops(config, scoreboard):
     """
@@ -94,3 +102,46 @@ class DevicesPollingLoop(AbstractPollingLoop):
 
         return True # all OK
 
+class DatabaseStoragePollingLoop(AbstractPollingLoop):
+    def __init__(self, scoreboard, db_dsn, **kwargs):
+        """
+        Read from the scoreboard and store current value for all input devices in DB.
+        """
+        super().__init__(scoreboard, **kwargs)
+        self.sensors_db = db_dsn
+        self._db_session = None
+
+    def create_db(self):
+        engine = create_engine(self.sensors_db)
+
+        if not os.access(self.sensors_db, os.R_OK):
+            self.log("Creating new DB {}".format(self.sensors_db))
+        # just update tables
+        Base.metadata.create_all(engine)
+
+    @property
+    def db_session(self):
+        if self._db_session is None:
+            engine = create_engine(self.sensors_db)
+            Base.metadata.bind = engine
+            DBSession = sessionmaker(bind=engine)
+            self._db_session = DBSession()
+        return self._db_session
+
+    def store_reading(self, reading):
+        """
+        :param: reading (dict) matching keys see :class:`Sensor` model
+        """
+        r = Sensor(**reading)
+        self.db_session.add(r)
+        self.db_session.commit()
+
+    def loop_actions(self):
+
+        for device_id, current_value in self.scoreboard.get_all_current_values():
+            msg = f"Reading: {device_id}"
+            msg += "{sensor_id},{value_type},{value_float}"
+            self.log(msg.format(**current_value))
+            self.store_reading(current_value)
+
+        return True # all OK

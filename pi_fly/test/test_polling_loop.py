@@ -4,7 +4,8 @@ Created on 1 Feb 2019
 @author: si
 '''
 from pi_fly.devices.dummy import DummyInput
-from pi_fly.polling_loop import DevicesPollingLoop, build_polling_loops
+from pi_fly.polling_loop import DevicesPollingLoop, build_polling_loops,\
+                                DatabaseStoragePollingLoop
 from pi_fly.scoreboard import ScoreBoard
 
 from .test_base import BaseTest
@@ -51,4 +52,35 @@ class TestPollingLoop(BaseTest):
         # time must be greater than when I wrote this test
         time_sensor_data = scoreboard.get_current_value("fake_input")
         self.assertTrue(time_sensor_data['value_float'] > 1549747311)
+
+    def test_database_storage_polling_loop(self):
+        """
+        db storage reads from scoreboard and writes to DB.
+        """
+        scoreboard = ScoreBoard()
+        devices = [DummyInput(name="fake_0"),
+                   DummyInput(name="fake_1"),
+                   ]
+
+        # make devices store something on scoreboard
+        devices_loop = DevicesPollingLoop(scoreboard,
+                                    name="a_loop",
+                                    sample_frequency=0.1,
+                                    devices=devices
+                                    )
+        devices_loop._single_loop()
+
+        # can DB loop see these values
+#         'sqlite:///:memory:',
+        # TODO I am here- can memory be used?
+        db_loop = DatabaseStoragePollingLoop(scoreboard,
+                                             'sqlite:////home/si/Desktop/fake_db.db',
+                                             name="db_loop",
+                                             sample_frequency=600,
+                                            )
+        db_loop.create_db()
+        db_loop._single_loop()
+
+
+        # TODO - read from DB and get values for both fake sensors
 

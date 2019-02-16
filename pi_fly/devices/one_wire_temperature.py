@@ -5,13 +5,13 @@ Created on 31 Jan 2019
 '''
 import os
 
-from .abstract_sensor import AbstractSensor
+from .abstract import AbstractSensor
 
 class OneWireTemperature(AbstractSensor):
-    def __init__(self, device_name, *args, **kwargs):
+    def __init__(self, device_id, *args, **kwargs):
         super(OneWireTemperature, self).__init__(*args, **kwargs)
-        self.device_id = device_name
-        self.device_path = "/sys/bus/w1/devices/{}/w1_slave".format(device_name)
+        self.device_id = device_id
+        self.device_path = "/sys/bus/w1/devices/{}/w1_slave".format(device_id)
 
     def get_reading(self):
         """
