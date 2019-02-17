@@ -6,7 +6,7 @@ Created on 1 Feb 2019
 import sqlite3
 
 from pi_fly.devices.dummy import DummyInput
-from pi_fly.polling_loop import DevicesPollingLoop, build_polling_loops,\
+from pi_fly.polling_loop import DevicesPollingLoop, build_device_polling_loops,\
                                 DatabaseStoragePollingLoop
 from pi_fly.scoreboard import ScoreBoard
 from pi_fly.settings.test_config import Config
@@ -42,7 +42,7 @@ class TestPollingLoop(BaseTest):
         Build PollingLoops from config variables.
         """
         scoreboard = ScoreBoard()
-        polling_loops = build_polling_loops(self.config, scoreboard)
+        polling_loops = build_device_polling_loops(self.config, scoreboard)
 
         self.assertEqual(1, len(polling_loops))
         p_test_loop = polling_loops[0]

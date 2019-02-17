@@ -28,8 +28,7 @@ def create_app(settings_class):
         d = datetime.utcnow() - last_reading.last_updated
         minutes_since_reading = d.total_seconds() / 60.
         page_vars = {'collection_failure': minutes_since_reading > 10.,
-#                      'water_temp': last_reading.value_float,
-                     'water_temp': current_app.sensor_scoreboard.get_current_value('counter'),
+                     'water_temp': last_reading.value_float,
                      'bath_possible': last_reading.value_float > 45.,
                      'last_read_at': last_reading.last_updated,
                     }

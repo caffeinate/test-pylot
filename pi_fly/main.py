@@ -13,6 +13,7 @@ import time
 import gunicorn.app.base
 from gunicorn.six import iteritems
 
+from pi_fly.polling_loop import DatabaseStoragePollingLoop, build_device_polling_loops
 from pi_fly.scoreboard import ScoreBoard
 from pi_fly.web_view import create_app
 
@@ -34,23 +35,29 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
 def run_forever(settings_label):
 
-    def _counter(scoreboard):
-        counter_value = 0
-        while True:
-            scoreboard.update_value('counter', counter_value)
-            counter_value += 1
-            time.sleep(2)
-
     app = create_app('settings.%s_config.Config' % settings_label)
     scoreboard = ScoreBoard() # for storing sensor values
     app.sensor_scoreboard = scoreboard
 
-    # TODO read loops from config and make a Proc per loop
+    # read input device loops from config and make a Proc per loop
+    # proc instead of async because of isolation in event of lock or exception or other failure
+    process_list = []
+    polling_loops = build_device_polling_loops(app.config, scoreboard)
+    for device_polling_loop in polling_loops:
+        p = Process(target=device_polling_loop)
+        p.start()
+        process_list.append(p)
 
-    counter_proc = Process(target=_counter, args=(scoreboard,))
-    counter_proc.start()
-
-    # TODO make a Proc to store values into DB
+    # proc to store values into DB
+    db_loop = DatabaseStoragePollingLoop(scoreboard,
+                                         app.config['SQLALCHEMY_DATABASE_URI'],
+                                         name="db_loop",
+                                         sample_frequency=5*60,
+                                         )
+    db_loop.create_db()
+    p = Process(target=db_loop)
+    p.start()
+    process_list.append(p)
 
     options = {
         'bind': '%s:%s' % ('0.0.0.0', app.config.get('HTTP_PORT', '80')),

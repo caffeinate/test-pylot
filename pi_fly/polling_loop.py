@@ -13,12 +13,12 @@ from sqlalchemy.orm import sessionmaker
 from pi_fly.model import Sensor, Base
 
 
-def build_polling_loops(config, scoreboard):
+def build_device_polling_loops(config, scoreboard):
     """
     :param: config dict. like config with `POLLING_LOOPS` as list of dicts.
             probably a flask config object.
 
-    :returns: list of instantiated :class:`pi_fly.polling_loop.PollingLoop`s
+    :returns: list of instantiated :class:`pi_fly.polling_loop.DevicesPollingLoop`s
             ready from :method:`run_forever` to be run on.
     """
     if isinstance(config, dict):
@@ -84,6 +84,12 @@ class AbstractPollingLoop:
             self.wait_time_total += wait_for
             self.loop_count += 1
             time.sleep(wait_for)
+
+    def __call__(self):
+        """
+        run forever as callable
+        """
+        return self.run_forever()
 
 class DevicesPollingLoop(AbstractPollingLoop):
     def __init__(self, scoreboard, **kwargs):
