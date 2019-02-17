@@ -3,10 +3,13 @@ Created on 1 Feb 2019
 
 @author: si
 '''
+import sqlite3
+
 from pi_fly.devices.dummy import DummyInput
 from pi_fly.polling_loop import DevicesPollingLoop, build_polling_loops,\
                                 DatabaseStoragePollingLoop
 from pi_fly.scoreboard import ScoreBoard
+from pi_fly.settings.test_config import Config
 
 from .test_base import BaseTest
 
@@ -71,10 +74,12 @@ class TestPollingLoop(BaseTest):
         devices_loop._single_loop()
 
         # can DB loop see these values
-#         'sqlite:///:memory:',
-        # TODO I am here- can memory be used?
+
+        # Memory doesn't seem to create tables?  e.g. 'sqlite:///:memory:' so
+        # using temp file.
+        config = Config()
         db_loop = DatabaseStoragePollingLoop(scoreboard,
-                                             'sqlite:////home/si/Desktop/fake_db.db',
+                                             config.SQLALCHEMY_DATABASE_URI,
                                              name="db_loop",
                                              sample_frequency=600,
                                             )
@@ -82,5 +87,15 @@ class TestPollingLoop(BaseTest):
         db_loop._single_loop()
 
 
-        # TODO - read from DB and get values for both fake sensors
+        # Read from DB (without sqlalchemy) and get values for both fake sensors
+        db_connection=sqlite3.connect(config.DB_FILE)
+        db_cursor=db_connection.cursor()
+        db_cursor.execute("select value_float from sensor")
+        rows = [r for r in db_cursor.fetchall()]
 
+        self.assertEqual(2, len(rows), "Two sensors")
+        for r in rows:
+            self.assertTrue(r[0] > 1550437321, "Time recorded is ahead of time test written.")
+
+        # clean up temp file
+        config.drop_db()

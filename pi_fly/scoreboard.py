@@ -44,7 +44,7 @@ class ScoreBoard:
             try:
                 out.append((device_id, self.shared_data[device_id]["current_value"]))
             except:
-                # device was removed
+                # device was removed or data malformed?
                 pass
 
         return out
