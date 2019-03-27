@@ -5,7 +5,7 @@ from pi_fly.devices.one_wire_temperature import OneWireTemperature
 class Config(BaseConfig):
     DEBUG=True
     SQLALCHEMY_DATABASE_URI = "sqlite:////data/sensors.db"
-    input_devices = [
+    INPUT_DEVICES = [
         OneWireTemperature("28-0015231007ee",
                            name="hot_water_top",
                            description="top of hot water tank"),
@@ -22,12 +22,12 @@ class Config(BaseConfig):
                            name="hot_water_bottom",
                            description="bottom of tank"),
                      ]
-    output_devices = [DummyOutput(name="fake_output"),
+    OUTPUT_DEVICES = [DummyOutput(name="fake_output"),
                       ]
-    DEVICES = input_devices + output_devices
+    DEVICES = INPUT_DEVICES + OUTPUT_DEVICES
     POLLING_LOOPS = [
         {'name': 'one_wire_general_bus',
          'sample_frequency': 20,
-         'devices': input_devices,
+         'devices': INPUT_DEVICES,
         }
         ]

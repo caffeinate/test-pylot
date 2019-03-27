@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+
+
+
+<h1>Sensors</h1>
+
+<table class="table table-condensed">
+{%for device_name, display in sensors.items()%}
+	<tr>
+		<td>{{device_name}}</td>
+		<td>{{display['display_value']}}</td>
+	</tr>
+{%endfor%}
+</table>
+
+
+{% endblock %}

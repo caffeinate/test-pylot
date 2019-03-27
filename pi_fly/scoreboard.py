@@ -35,14 +35,14 @@ class ScoreBoard:
         """
         Ideally, avoid a race condition by returning the lot.
         :returns list of (str, dict) (device_name, current_value).
-                device_id will be a string, e.g. fake_0
+                device_name will be a string, e.g. fake_0
                 current_value will be a dict, e.g.
                 {'sensor_id': None, 'value_type': 'time', 'value_float': 1550350895.377642}
         """
         out = []
-        for device_id in self.shared_data.keys():
+        for device_name in self.shared_data.keys():
             try:
-                out.append((device_id, self.shared_data[device_id]["current_value"]))
+                out.append((device_name, self.shared_data[device_name]["current_value"]))
             except:
                 # device was removed or data malformed?
                 pass

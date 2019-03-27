@@ -4,13 +4,10 @@ Created on 27 Mar 2019
 @author: si
 '''
 from datetime import datetime
+import unittest
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-from pi_fly.devices.dummy import DummyInput
-from pi_fly.polling_loop import DevicesPollingLoop, build_device_polling_loops,\
-                                DatabaseStoragePollingLoop
-from pi_fly.scoreboard import ScoreBoard
 
 from pi_fly.model import Sensor, Base
 from pi_fly.web_view import create_app
@@ -62,5 +59,11 @@ class TestWebViews(BaseTest):
         self.db_session.commit()
 
         rv = self.test_client.get('/')
+        self.assertEqual(200, rv.status_code)
+        self.assertIn(b'123', rv.data, "Temperature should be rounded to nearest degree")
+
+    @unittest.skip("create_app needs scoreboard")
+    def test_scoreboard(self):
+        rv = self.test_client.get('/sensor_scoreboard/')
         self.assertEqual(200, rv.status_code)
         self.assertIn(b'123', rv.data, "Temperature should be rounded to nearest degree")

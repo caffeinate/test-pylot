@@ -9,14 +9,14 @@ from pi_fly.devices.dummy import DummyInput, DummyOutput
 class Config(BaseConfig):
     DEBUG=True
     SQLALCHEMY_DATABASE_URI = "sqlite:////Users/si/Documents/Scratch/sensors.db"
-    input_devices = [DummyInput(name="fake_input"),
+    INPUT_DEVICES = [DummyInput(name="fake_input"),
                      ]
-    output_devices = [DummyOutput(name="fake_output"),
+    OUTPUT_DEVICES = [DummyOutput(name="fake_output"),
                       ]
-    DEVICES = input_devices + output_devices
+    DEVICES = INPUT_DEVICES + OUTPUT_DEVICES
     POLLING_LOOPS = [
         {'name': 'short_loop',
          'sample_frequency': .2,
-         'devices': input_devices,
+         'devices': INPUT_DEVICES,
         }
         ]
