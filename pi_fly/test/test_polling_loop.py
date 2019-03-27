@@ -17,10 +17,9 @@ class TestPollingLoop(BaseTest):
 
     def test_device_read(self):
         """
-        Poll a single (dummy) device once. Check a wiat time (for next loop)
+        Poll a single (dummy) device once. Check a wait time (before rnning next loop)
         is returned and check a value is read.
         """
-
         scoreboard = ScoreBoard()
         devices = [DummyInput(name="fake_input")]
         

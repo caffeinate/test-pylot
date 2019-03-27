@@ -24,6 +24,8 @@ def create_app(settings_class):
                             .order_by(Sensor.last_updated.desc())\
                             .filter(Sensor.sensor_id==hot_water_sensor_id)\
                             .first()
+        if last_reading is None:
+            return render_template("user_message.html", **{'msg': 'No sensor readings in DB.'})
 
         d = datetime.utcnow() - last_reading.last_updated
         minutes_since_reading = d.total_seconds() / 60.
@@ -35,8 +37,14 @@ def create_app(settings_class):
 
         return render_template("dashboard.html", **page_vars)
 
-    return app
+    @app.route('/sensor_scoreboard/')
+    def sensor_scoreboard():
+        page_vars = {
+                    }
 
+        return render_template("sensor_scoreboard.html", **page_vars)
+
+    return app
 
 if __name__ == '__main__':
     app = create_app('settings.local_config.Config')

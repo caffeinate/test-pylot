@@ -112,6 +112,8 @@ class DatabaseStoragePollingLoop(AbstractPollingLoop):
     def __init__(self, scoreboard, db_dsn, **kwargs):
         """
         Read from the scoreboard and store current value for all input devices in DB.
+        :param: scoreboard
+        :param: db_dsn (str) e.g. "sqlite:////data/sensors.db"
         """
         super().__init__(scoreboard, **kwargs)
         self.sensors_db = db_dsn

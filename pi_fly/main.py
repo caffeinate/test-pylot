@@ -8,7 +8,6 @@ Created on 22 Apr 2018
 # from __future__ import unicode_literals
 from multiprocessing import Process
 import sys
-import time
 
 import gunicorn.app.base
 from gunicorn.six import iteritems
