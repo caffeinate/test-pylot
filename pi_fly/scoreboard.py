@@ -16,7 +16,11 @@ class ScoreBoard:
     def update_value(self, device_name, values_read):
         """
         :param: device_name (str)
-        :param: values_read (dict)
+        :param: values_read (dict), whatever comes from that type of sensor
+                        example: {'sensor_id': '28-0015231007ee',
+                                  'value_type': 'temperature',
+                                  'value_float': 15.377
+                                  }
         """
         if device_name not in self.shared_data:
             self.shared_data[device_name] = self.manager.dict()

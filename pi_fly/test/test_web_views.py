@@ -10,8 +10,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from pi_fly.model import Sensor, Base
+from pi_fly.scoreboard import ScoreBoard
 from pi_fly.web_view import create_app
-
 
 from .test_base import BaseTest
 
@@ -20,7 +20,7 @@ class TestWebViews(BaseTest):
     def setUp(self):
         super().setUp()
 
-        self.app = create_app(self.config)
+        self.app = create_app(self.config, ScoreBoard())
         self.test_client = self.app.test_client()
 
         # useful when using DB in memory
@@ -62,8 +62,16 @@ class TestWebViews(BaseTest):
         self.assertEqual(200, rv.status_code)
         self.assertIn(b'123', rv.data, "Temperature should be rounded to nearest degree")
 
-    @unittest.skip("create_app needs scoreboard")
     def test_scoreboard(self):
+        """
+        Check the shared memory for holding sensor values can be accessed.
+        """
+        values_read = {'sensor_id': None,
+                       'value_type': "time",
+                       'value_float': 1553982125.797958
+                       }
+        self.app.sensor_scoreboard.update_value('fake_input', values_read)
+
         rv = self.test_client.get('/sensor_scoreboard/')
         self.assertEqual(200, rv.status_code)
-        self.assertIn(b'123', rv.data, "Temperature should be rounded to nearest degree")
+        self.assertIn(b'1553982125.797958', rv.data, "Time of fake input sensor not found.")

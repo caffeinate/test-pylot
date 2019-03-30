@@ -5,7 +5,7 @@ Created on 15 Apr 2018
 '''
 from datetime import datetime
 
-from flask import Flask, Response, render_template, current_app
+from flask import Flask, render_template, current_app
 from flask_sqlalchemy import SQLAlchemy
 
 from pi_fly.devices.abstract import AbstractSensor
@@ -13,10 +13,17 @@ from pi_fly.model import Sensor
 
 db = SQLAlchemy()
 
-def create_app(settings_class):
+def create_app(settings_class, scoreboard):
+    """
+    :param settings_class (str or class) to Flask settings
+    :param scoreboard instance of :class:`pi_fly.scoreboard.ScoreBoard`
+    """
     app = Flask(__name__)
     app.config.from_object(settings_class)
     db.init_app(app)
+
+    app.sensor_scoreboard = scoreboard
+
 
     @app.route('/')
     def dashboard():
@@ -51,15 +58,11 @@ def create_app(settings_class):
             assert isinstance(input_device, AbstractSensor)
             if input_device.name in sensor_values:
                 v = sensor_values[input_device.name]
-                if v['value_type'] == "temperature":
-                    dv = v['value_float']
-                else:
-                    dv = v['value_type'] + ':' + str(v['value_float'])
-
-            display = {'display_value': dv,
-                       'display_class': '',
-                       }
-            p[input_device.name] = display
+                dv = v['value_type'] + ':' + str(v['value_float'])
+                display = {'display_value': dv,
+                           'display_class': '',
+                           }
+                p[input_device.name] = display
 
         for name, values in sensor_values.items():
             if name not in p:
@@ -73,6 +76,3 @@ def create_app(settings_class):
 
     return app
 
-if __name__ == '__main__':
-    app = create_app('settings.local_config.Config')
-    app.run(debug=app.config['DEBUG'], use_reloader=False, port=6010)

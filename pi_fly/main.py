@@ -34,9 +34,8 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
 def run_forever(settings_label):
 
-    app = create_app('settings.%s_config.Config' % settings_label)
     scoreboard = ScoreBoard() # for storing sensor values
-    app.sensor_scoreboard = scoreboard
+    app = create_app('settings.%s_config.Config' % settings_label, scoreboard)
 
     # read input device loops from config and make a Proc per loop
     # proc instead of async because of isolation in event of lock or exception or other failure
