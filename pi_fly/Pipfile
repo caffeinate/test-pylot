@@ -9,5 +9,3 @@ flask-sqlalchemy = "*"
 flask = "*"
 
 [dev-packages]
-pytest = "*"
-v = {editable = true,version = "*"}
