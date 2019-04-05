@@ -19,5 +19,6 @@ class Config(BaseConfig):
         {'name': 'short_loop',
          'sample_frequency': .2,
          'devices': INPUT_DEVICES,
+         'log_to_stdout': True,
         }
         ]

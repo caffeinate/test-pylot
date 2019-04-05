@@ -51,6 +51,7 @@ def run_forever(settings_label):
                                          app.config['SQLALCHEMY_DATABASE_URI'],
                                          name="db_loop",
                                          sample_frequency=5*60,
+                                         log_to_stdout=True,
                                          )
     db_loop.create_db()
     p = Process(target=db_loop)

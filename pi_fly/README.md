@@ -27,3 +27,9 @@ pip3 install gunicorn
 pip3 install flask
 pip3 install flask-sqlalchemy
 ```
+
+Runs like this-
+```shell
+root@raspberrypi:/home/pi/test-pylot_pi_fly_combined/pi_fly# export PYTHONPATH="/home/pi/test-pylot_pi_fly_combined"
+root@raspberrypi:/home/pi/test-pylot_pi_fly_combined/pi_fly# python3 main.py live
+```
