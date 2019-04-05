@@ -8,6 +8,7 @@ from pi_fly.devices.dummy import DummyInput, DummyOutput
 
 class Config(BaseConfig):
     DEBUG=True
+    HTTP_PORT = 8181
     SQLALCHEMY_DATABASE_URI = "sqlite:////Users/si/Documents/Scratch/sensors.db"
     INPUT_DEVICES = [DummyInput(name="fake_input"),
                      ]

@@ -4,6 +4,7 @@ from pi_fly.devices.one_wire_temperature import OneWireTemperature
 
 class Config(BaseConfig):
     DEBUG=True
+    HTTP_PORT = 80
     SQLALCHEMY_DATABASE_URI = "sqlite:////data/sensors.db"
     INPUT_DEVICES = [
         OneWireTemperature("28-0015231007ee",
