@@ -5,6 +5,8 @@ Created on 1 Feb 2019
 '''
 from multiprocessing import Manager
 
+WORK_AROUNG_PY34_BUG = True
+
 class ScoreBoard:
     """
     Shared memory to hold values read from sensors.
@@ -22,18 +24,26 @@ class ScoreBoard:
                                   'value_float': 15.377
                                   }
         """
-        if device_name not in self.shared_data:
-            self.shared_data[device_name] = self.manager.dict()
-            self.shared_data[device_name]["previous_values"] = \
-                self.manager.list()
+        if WORK_AROUNG_PY34_BUG:
+            # simplified - can't store previous values
+            self.shared_data[device_name] = values_read
+        else:
 
-        # TODO, race condition if current value is appended to previous?
-        # don't store previous for now.
+            if device_name not in self.shared_data:
+                self.shared_data[device_name] = self.manager.dict()
 
-        self.shared_data[device_name]["current_value"] = values_read
+            self.shared_data[device_name]["previous_values"] = self.manager.list()
+
+            # TODO, race condition if current value is appended to previous?
+            # don't store previous for now.
+
+            self.shared_data[device_name]["current_value"] = values_read
     
     def get_current_value(self, device_name):
-        return self.shared_data[device_name]["current_value"]
+        if WORK_AROUNG_PY34_BUG:
+            return self.shared_data[device_name]
+        else:
+            return self.shared_data[device_name]["current_value"]
 
     def get_all_current_values(self):
         """
@@ -46,7 +56,10 @@ class ScoreBoard:
         out = []
         for device_name in self.shared_data.keys():
             try:
-                out.append((device_name, self.shared_data[device_name]["current_value"]))
+                if WORK_AROUNG_PY34_BUG:
+                    out.append((device_name, self.shared_data[device_name]))
+                else:
+                    out.append((device_name, self.shared_data[device_name]["current_value"]))
             except:
                 # device was removed or data malformed?
                 pass
