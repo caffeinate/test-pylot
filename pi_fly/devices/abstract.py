@@ -44,7 +44,12 @@ class AbstractOutput(AbstractDevice):
                                         initiated.
         """
         super(AbstractOutput, self).__init__(*args, **kwargs)
-        self.s = kwargs.pop('set_state_on_start', False)
+        set_state_on_start = kwargs.pop('set_state_on_start', None)
+        if set_state_on_start is not None:
+            r = self.set_state(set_state_on_start)
+            if r not in (AbstractOutput.SetState.OK, AbstractOutput.SetState.NO_CHANGE):
+                msg = "Couldn't set state for {} to {}"
+                raise ValueError(msg.format(self.name, set_state_on_start))
 
     def set_state(self, state):
         """

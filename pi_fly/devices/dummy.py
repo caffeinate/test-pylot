@@ -26,9 +26,9 @@ class DummyInput(AbstractSensor):
 class DummyOutput(AbstractOutput):
 
     def __init__(self, *args, **kwargs):
-        super(DummyOutput, self).__init__(*args, **kwargs)
         self.last_change = None
         self.current_state = None # None means undefined
+        super(DummyOutput, self).__init__(*args, **kwargs)
 
     def set_state(self, state):
         """

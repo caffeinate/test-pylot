@@ -19,9 +19,9 @@ class TestDevices(BaseTest):
         self.assertEqual(None, output.state)
                 
         output = DummyOutput(name="fake_input",
-                             set_state_on_start=False
+                             set_state_on_start=True
                              )
-        self.assertFalse(output.state)
+        self.assertTrue(output.state)
 
     def test_output_time_limited_state_changes(self):
         # safe switching > 10 ms
