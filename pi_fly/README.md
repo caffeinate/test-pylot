@@ -33,3 +33,7 @@ Runs like this-
 root@raspberrypi:/home/pi/test-pylot_pi_fly_combined/pi_fly# export PYTHONPATH="/home/pi/test-pylot_pi_fly_combined"
 root@raspberrypi:/home/pi/test-pylot_pi_fly_combined/pi_fly# python3 main.py live
 ```
+
+## Random Notes
+
+* Nothing prevents multiple output devices claiming the same GPIO output pin or other resources. This could be a problem when the subclass of `AbstractOutput` limits the number of switches per time period.
