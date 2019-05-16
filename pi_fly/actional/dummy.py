@@ -1,6 +1,8 @@
 from pi_fly.actional.abstract import AbstractActional
 
 class DummyActional(AbstractActional):
+    SAMPLE_FREQUENCY = 0.5
+
     def __call__(self):
 
         while True:

@@ -36,11 +36,24 @@ class AbstractPollingLoop:
     def __init__(self, scoreboard, **kwargs):
         """
         :param: scoreboard instance of :class:`pi_fly.scoreboard.Scoreboard`.
-                Shared memory used to hold data retrieved from sensor. 
+                Shared memory used to hold data retrieved from sensor.
+
+        mandatory kwargs:
+            name (str) how the subclass is referred to in logs, links between devices etc.
+
+        required somewhere kwargs:
+            sample_frequency (float) minimum seconds a loop should take. Loops sleep for any
+                        spare time after processing. Can be a class variable named SAMPLE_FREQUENCY
+                        in the subclass or passed to constructor. Constructor wins if both are
+                        present.
+
+        optional kwargs:
+            description (str)
+            log_to_stdout (bool) print log messages to standard output
         """
         self.scoreboard = scoreboard
         self.name = kwargs.pop('name')
-        self.sample_frequency = kwargs.pop('sample_frequency')
+        self.sample_frequency = kwargs.pop('sample_frequency', self.__class__.SAMPLE_FREQUENCY)
         self.description = kwargs.pop('description', None)
         self.log_to_stdout = kwargs.pop('log_to_stdout', False)
 
