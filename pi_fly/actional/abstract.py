@@ -3,7 +3,13 @@ Created on 1 May 2019
 
 @author: si
 '''
+from collections import namedtuple
+
 from pi_fly.polling_loop import AbstractPollingLoop
+
+# only 'action' can be 'command'|'log', 'message' is mixed. Up to receiver.
+# is action is 'command' and message == 'terminate' the process will end at end of next loop
+CommsMessage = namedtuple('CommsMessage', ['action', 'message'])
 
 class AbstractActional(AbstractPollingLoop):
     """
@@ -36,6 +42,7 @@ class AbstractActional(AbstractPollingLoop):
         # scoreboard is added later
         super().__init__(None, **kwargs)
         self.comms_channel = None
+        self.polling_timeout = self.sample_frequency / 2  # how long to wait for incoming messages
     
     def set_comms_channel(self, comms_channel):
         """
@@ -43,17 +50,53 @@ class AbstractActional(AbstractPollingLoop):
         """
         self.comms_channel = comms_channel
 
+    def log(self, msg, level="INFO"):
+        super().log(msg, level)
+        if self.comms_channel:
+            # log messages are sent back to the parent via the comms channel
+            self.comms_channel.send(CommsMessage(action="log", message=msg))
+
     def loop_actions(self):
         """
         What to do each time the loop is run.
         """
-        # TODO watch comms channel, run actional_loop_actions
-        raise NotImplementedError("Should be implemented by sub classes")
+        # Check the comms channel
+        if self.comms_channel.poll(self.polling_timeout):
+            msg = self.comms_channel.recv()
+            if not isinstance(msg, CommsMessage):
+                m = "Skipping msg received as in wrong format. Should be CommsMessage. Got {}"
+                self.log(m.format(str(msg)))
+            elif msg.action == 'command':
+                if msg.message == 'terminate':
+                    self.terminate_now = True
+                else:
+                    self.run_command(msg.message)
+            else:
+                self.log("Unknown message type received on comms channel")
+
+
+        # run subclass's actions.
+        self.actional_loop_actions()
 
     def actional_loop_actions(self):
         """
         To be implemented by subclass. This method is run once per loop and contains actional
         logic and actions not including checking the comms channel. This is done by
         :method:`AbstractActional.loop_actions`
+
+        Recieving messages on the comms channel will slightly alter how regular this method will be
+        called but it will typically be every  (1 / AbstractPollingLoop.sample_frequency) seconds.
+        """
+        raise NotImplementedError("Should be implemented by subclass")
+
+    def run_command(self, cmd_message):
+        """
+        To be implemented by subclass.
+        CommsMessage's received on the comms pipe where type is 'command' are given to
+        this method. The subclass is expected to use this to set an internal state
+        or return a value (on the comms channel or via scoreboard).
+
+        cmd_message (mixed) the value of CommsMessage.message as passed through the comms channel
+                    to this actional.
         """
         raise NotImplementedError("Should be implemented by subclass")

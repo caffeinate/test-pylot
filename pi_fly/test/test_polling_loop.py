@@ -11,7 +11,7 @@ from pi_fly.polling_loop import DevicesPollingLoop, build_device_polling_loops,\
 from pi_fly.scoreboard import ScoreBoard
 from pi_fly.settings.test_config import Config
 
-from .test_base import BaseTest
+from pi_fly.test.test_base import BaseTest
 
 class TestPollingLoop(BaseTest):
 

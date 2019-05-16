@@ -5,9 +5,9 @@ Created on 8 May 2019
 '''
 from multiprocessing import Process, Pipe
 
+from pi_fly.actional.abstract import CommsMessage
 from pi_fly.actional.dummy import DummyActional
-
-from .test_base import BaseTest
+from pi_fly.test.test_base import BaseTest
 
 class TestActionals(BaseTest):
 
@@ -30,10 +30,23 @@ class TestActionals(BaseTest):
         p = Process(target=a)
         p.start()
 
+        parent_conn.send(CommsMessage(action="command", message="hello"))
+        parent_conn.send(CommsMessage(action="command", message="terminate"))
 
+        comms_messages_recieved = []
+        while True:
+            if parent_conn.poll(0.1):
+                comms_messages_recieved.append(parent_conn.recv())
 
+            if not p.is_alive():
+                break
 
-        parent_conn.send("hello")
-
-        print(parent_conn.recv())
         p.join()
+        log_messages = [cm.message for cm in comms_messages_recieved]
+        self.assertIn('hello command hello',
+                      log_messages,
+                      "DummyActional.run_command didn't run")
+
+        self.assertIn('dummy action is running',
+                      log_messages,
+                      "DummyActional.actional_loop_actions fail")

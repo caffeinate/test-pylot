@@ -33,6 +33,10 @@ def build_device_polling_loops(config, scoreboard):
     return p_loops
 
 class AbstractPollingLoop:
+
+    SAMPLE_FREQUENCY = 2.  # can be class variable in subclasses or passed as kwarg.
+                            # It's samples per second.
+
     def __init__(self, scoreboard, **kwargs):
         """
         :param: scoreboard instance of :class:`pi_fly.scoreboard.Scoreboard`.
@@ -60,6 +64,7 @@ class AbstractPollingLoop:
         self.wait_time_total = 0.
         self.loop_count = 0
         self.loop_last_ran = None
+        self.terminate_now = False  # set by subclass to cleanly terminate at end of next loop
 
     def log(self, msg, level="INFO"):
         # TODO wire this to top level's log
@@ -96,6 +101,11 @@ class AbstractPollingLoop:
             wait_for = self._single_loop()
             self.wait_time_total += wait_for
             self.loop_count += 1
+
+            if self.terminate_now:
+                self.log("received signal to terminate")
+                return
+
             time.sleep(wait_for)
 
     def __call__(self):
