@@ -4,7 +4,6 @@ Created on 27 Mar 2019
 @author: si
 '''
 from datetime import datetime
-import unittest
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

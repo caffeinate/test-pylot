@@ -9,15 +9,13 @@ from pi_fly.devices.dummy import DummyInput
 from pi_fly.polling_loop import DevicesPollingLoop, build_device_polling_loops,\
                                 DatabaseStoragePollingLoop
 from pi_fly.scoreboard import ScoreBoard
-from pi_fly.settings.test_config import Config
-
 from pi_fly.test.test_base import BaseTest
 
 class TestPollingLoop(BaseTest):
 
     def test_device_read(self):
         """
-        Poll a single (dummy) device once. Check a wait time (before rnning next loop)
+        Poll a single (dummy) device once. Check a wait time (before running next loop)
         is returned and check a value is read.
         """
         scoreboard = ScoreBoard()
@@ -75,19 +73,17 @@ class TestPollingLoop(BaseTest):
         # can DB loop see these values
 
         # Memory doesn't seem to create tables?  e.g. 'sqlite:///:memory:' so
-        # using temp file.
-        config = Config()
+        # config must be using temp file.
         db_loop = DatabaseStoragePollingLoop(scoreboard,
-                                             config.SQLALCHEMY_DATABASE_URI,
+                                             self.config.SQLALCHEMY_DATABASE_URI,
                                              name="db_loop",
                                              sample_frequency=600,
                                             )
         db_loop.create_db()
         db_loop._single_loop()
 
-
         # Read from DB (without sqlalchemy) and get values for both fake sensors
-        db_connection=sqlite3.connect(config.DB_FILE)
+        db_connection=sqlite3.connect(self.config.DB_FILE)
         db_cursor=db_connection.cursor()
         db_cursor.execute("select value_float from sensor")
         rows = [r for r in db_cursor.fetchall()]
@@ -95,6 +91,3 @@ class TestPollingLoop(BaseTest):
         self.assertEqual(2, len(rows), "Two sensors")
         for r in rows:
             self.assertTrue(r[0] > 1550437321, "Time recorded is ahead of time test written.")
-
-        # clean up temp file
-        config.drop_db()
