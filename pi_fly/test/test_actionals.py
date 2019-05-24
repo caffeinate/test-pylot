@@ -7,6 +7,8 @@ from multiprocessing import Process, Pipe
 
 from pi_fly.actional.abstract import CommsMessage
 from pi_fly.actional.dummy import DummyActional
+from pi_fly.devices.dummy import DummyOutput
+from pi_fly.scoreboard import ScoreBoard
 from pi_fly.test.test_base import BaseTest
 
 class TestActionals(BaseTest):
@@ -20,6 +22,8 @@ class TestActionals(BaseTest):
         # specific along with the sensors that the actional reads from and the devices it writes
         # to.
         a = DummyActional(name="fake_actional",
+                          my_input="the_time",
+                          my_output=DummyOutput(name="fake_output")
                           )
         
         # connecting the comms channel isn't done in the config but by a controller that
@@ -50,3 +54,46 @@ class TestActionals(BaseTest):
         self.assertIn('dummy action is running',
                       log_messages,
                       "DummyActional.actional_loop_actions fail")
+
+    def test_scoreboard_io(self):
+        """
+        Input and output to the scoreboard
+        """
+        a = DummyActional(name="fake_actional",
+                          my_input="the_time",
+                          my_output=DummyOutput(name="fake_output")
+                          )
+        scoreboard = ScoreBoard()
+        a.set_scoreboard(scoreboard)
+
+        # put something onto the scoreboard for the dummy actional to read
+        scoreboard.update_value('the_time', 42)
+
+        # :method:`actional_loop_actions` is normally called once per loop.
+        # The dummy actional looks for the scoreboard value for it's 'my_input' and responds by
+        # doubling the number it finds and putting this value back on the scoreboard under device
+        # name 'actional_reply'
+        a.actional_loop_actions()
+
+        reply = scoreboard.get_current_value('actional_reply')
+        self.assertEqual(84, reply)
+
+    def test_output_device(self):
+        """
+        On receiving the pre-agree magic number 123 from the input device, set the output device
+        to True.
+        """
+        output = DummyOutput(name="fake_output",
+                             set_state_on_start=False
+                             )
+        a = DummyActional(name="fake_actional",
+                          my_input="the_time",
+                          my_output=output
+                          )
+        scoreboard = ScoreBoard()
+        a.set_scoreboard(scoreboard)
+        scoreboard.update_value('the_time', 123)
+
+        self.assertFalse(output.state)
+        a.actional_loop_actions()
+        self.assertTrue(output.state)

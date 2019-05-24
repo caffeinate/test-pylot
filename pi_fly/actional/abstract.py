@@ -43,7 +43,15 @@ class AbstractActional(AbstractPollingLoop):
         super().__init__(None, **kwargs)
         self.comms_channel = None
         self.polling_timeout = self.sample_frequency / 2  # how long to wait for incoming messages
-    
+
+    def set_scoreboard(self, scoreboard):
+        """
+        Other subclasses of :class:`AbstractPollingLoop` set the scoreboard in the constructor
+        but actionals are inititated in settings where the scoreboard isn't available so it's
+        set later using this method.
+        """
+        self.scoreboard = scoreboard
+
     def set_comms_channel(self, comms_channel):
         """
         :param: comms_channel instance of :class:`multiprocessing.Pipe`
@@ -81,10 +89,10 @@ class AbstractActional(AbstractPollingLoop):
     def actional_loop_actions(self):
         """
         To be implemented by subclass. This method is run once per loop and contains actional
-        logic and actions not including checking the comms channel. This is done by
+        logic and actions not including checking the comms channel as that is done by
         :method:`AbstractActional.loop_actions`
 
-        Recieving messages on the comms channel will slightly alter how regular this method will be
+        Receiving messages on the comms channel will slightly alter how regular this method will be
         called but it will typically be every  (1 / AbstractPollingLoop.sample_frequency) seconds.
         """
         raise NotImplementedError("Should be implemented by subclass")
