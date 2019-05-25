@@ -18,14 +18,14 @@ class DummyActional(AbstractActional):
         super().__init__(**kwargs)
 
     def actional_loop_actions(self):
-        self.log("dummy action is running")
+        self.log(f"dummy actional ({self.name}) is running")
         if self.scoreboard:
             current_value = self.scoreboard.get_current_value(self.my_input)
             # reply by doubling the value
-            self.scoreboard.update_value('actional_reply', current_value*2)
+            self.scoreboard.update_value('actional_reply', current_value['value_float']*2)
 
             # magic value to take a specific action on
-            if current_value == 123:
+            if current_value['value_float'] == 123:
                 self.my_output.state = True
 
     def run_command(self, cmd_message):

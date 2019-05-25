@@ -12,9 +12,11 @@ import sys
 import gunicorn.app.base
 from gunicorn.six import iteritems
 
+from pi_fly.actional.actional_management import build_actional_processes
 from pi_fly.polling_loop import DatabaseStoragePollingLoop, build_device_polling_loops
 from pi_fly.scoreboard import ScoreBoard
 from pi_fly.web_view import create_app
+
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
@@ -57,6 +59,12 @@ def run_forever(settings_label):
     p = Process(target=db_loop)
     p.start()
     process_list.append(p)
+    
+    # Actionals take an action based on inputs.
+    governor_proc, actional_details = build_actional_processes(app.config, scoreboard)
+    governor_proc.start()
+    for actional_name, actional_details in actional_details.items():
+        actional_details['process'].start()
 
     options = {
         'bind': '%s:%s' % ('0.0.0.0', app.config.get('HTTP_PORT', '80')),

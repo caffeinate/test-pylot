@@ -6,6 +6,7 @@ Created on 8 May 2019
 from multiprocessing import Process, Pipe
 
 from pi_fly.actional.abstract import CommsMessage
+from pi_fly.actional.actional_management import build_actional_processes
 from pi_fly.actional.dummy import DummyActional
 from pi_fly.devices.dummy import DummyOutput
 from pi_fly.scoreboard import ScoreBoard
@@ -51,7 +52,7 @@ class TestActionals(BaseTest):
                       log_messages,
                       "DummyActional.run_command didn't run")
 
-        self.assertIn('dummy action is running',
+        self.assertIn('dummy actional (fake_actional) is running',
                       log_messages,
                       "DummyActional.actional_loop_actions fail")
 
@@ -67,7 +68,11 @@ class TestActionals(BaseTest):
         a.set_scoreboard(scoreboard)
 
         # put something onto the scoreboard for the dummy actional to read
-        scoreboard.update_value('the_time', 42)
+        fake_sensor_output = {'sensor_id': None,
+                              'value_type': "time",
+                              'value_float': 42
+                              }
+        scoreboard.update_value('the_time', fake_sensor_output)
 
         # :method:`actional_loop_actions` is normally called once per loop.
         # The dummy actional looks for the scoreboard value for it's 'my_input' and responds by
@@ -92,8 +97,25 @@ class TestActionals(BaseTest):
                           )
         scoreboard = ScoreBoard()
         a.set_scoreboard(scoreboard)
-        scoreboard.update_value('the_time', 123)
+        fake_sensor_output = {'sensor_id': None,
+                              'value_type': "time",
+                              'value_float': 123
+                              }
+        scoreboard.update_value('the_time', fake_sensor_output)
 
         self.assertFalse(output.state)
         a.actional_loop_actions()
         self.assertTrue(output.state)
+
+    def test_build_actional_processes_nothing(self):
+        scoreboard = ScoreBoard()
+        self.config.ACTIONALS = []
+        governor_proc, actional_details = build_actional_processes(self.config, scoreboard)
+        self.assertEqual(None, governor_proc)
+        self.assertEqual({}, actional_details)
+
+    def test_build_actional_processes(self):
+        scoreboard = ScoreBoard()
+        governor_proc, actional_details = build_actional_processes(self.config, scoreboard)
+        self.assertTrue(isinstance(governor_proc, Process))
+#         self.assertEqual({}, actional_details)
