@@ -5,14 +5,13 @@ Created on 22 Apr 2018
 
 @author: si
 '''
-# from __future__ import unicode_literals
 from multiprocessing import Process
 import sys
 
 import gunicorn.app.base
 from gunicorn.six import iteritems
 
-from pi_fly.actional.actional_management import build_actional_processes
+from pi_fly.actional.actional_management import build_actional_processes, governor_run_forever
 from pi_fly.polling_loop import DatabaseStoragePollingLoop, build_device_polling_loops
 from pi_fly.scoreboard import ScoreBoard
 from pi_fly.web_view import create_app
@@ -61,10 +60,13 @@ def run_forever(settings_label):
     process_list.append(p)
     
     # Actionals take an action based on inputs.
-    governor_proc, actional_details = build_actional_processes(app.config, scoreboard)
+    actional_details = build_actional_processes(app.config, scoreboard)
+    governor_proc = Process(target=governor_run_forever, args=(actional_details,))
     governor_proc.start()
-    for actional_name, actional_details in actional_details.items():
+    process_list.append(governor_proc)
+    for actional_details in actional_details.values():
         actional_details['process'].start()
+        process_list.append(actional_details['process'])
 
     options = {
         'bind': '%s:%s' % ('0.0.0.0', app.config.get('HTTP_PORT', '80')),

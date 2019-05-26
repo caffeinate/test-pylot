@@ -4,12 +4,14 @@ Created on 1 May 2019
 @author: si
 '''
 from collections import namedtuple
+from datetime import datetime
 
 from pi_fly.polling_loop import AbstractPollingLoop
 
 # only 'action' can be 'command'|'log', 'message' is mixed. Up to receiver.
 # is action is 'command' and message == 'terminate' the process will end at end of next loop
-CommsMessage = namedtuple('CommsMessage', ['action', 'message'])
+CommsMessage = namedtuple('CommsMessage', ['action', 'message', 'date_stamp'])
+CommsMessage.__new__.__defaults__ = (None,) * len(CommsMessage._fields)
 
 class AbstractActional(AbstractPollingLoop):
     """
@@ -59,16 +61,21 @@ class AbstractActional(AbstractPollingLoop):
         self.comms_channel = comms_channel
 
     def log(self, msg, level="INFO"):
-        super().log(msg, level)
         if self.comms_channel:
             # log messages are sent back to the parent via the comms channel
-            self.comms_channel.send(CommsMessage(action="log", message=msg))
+            date_stamp = datetime.utcnow()
+            cm = CommsMessage(action="log", message=(msg, level), date_stamp=date_stamp)
+            self.comms_channel.send(cm)
+        else:
+            # try stdout/whatever has been set locally
+            super().log(msg, level)
 
     def loop_actions(self):
         """
         What to do each time the loop is run.
         """
-        # Check the comms channel
+        # Check the comms channel for messages for the subclass. Messages from the subclass
+        # are read by the governor process (see :function:`actional_manage.governor_run_forever`)
         if self.comms_channel.poll(self.polling_timeout):
             msg = self.comms_channel.recv()
             if not isinstance(msg, CommsMessage):
@@ -81,7 +88,6 @@ class AbstractActional(AbstractPollingLoop):
                     self.run_command(msg.message)
             else:
                 self.log("Unknown message type received on comms channel")
-
 
         # run subclass's actions.
         self.actional_loop_actions()

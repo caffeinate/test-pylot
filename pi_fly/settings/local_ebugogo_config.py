@@ -21,7 +21,7 @@ class Config(BaseConfig):
     DEVICES = INPUT_DEVICES + OUTPUT_DEVICES
     POLLING_LOOPS = [
         {'name': 'short_loop',
-         'sample_frequency': .2,
+         'sample_frequency': 2,
          'devices': INPUT_DEVICES,
          'log_to_stdout': True,
         }

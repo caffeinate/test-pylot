@@ -3,6 +3,7 @@ Created on 1 Feb 2019
 
 @author: si
 '''
+from datetime import datetime
 import os
 import time
 
@@ -66,10 +67,13 @@ class AbstractPollingLoop:
         self.loop_last_ran = None
         self.terminate_now = False  # set by subclass to cleanly terminate at end of next loop
 
-    def log(self, msg, level="INFO"):
+    def log(self, msg, level="INFO", date_stamp=None):
         # TODO wire this to top level's log
         if self.log_to_stdout:
-            print("{}{}".format(level.ljust(10), msg))
+            if date_stamp is None:
+                date_stamp = datetime.utcnow()
+            date_formatted = date_stamp.strftime("%Y-%m-%d %H:%M:%S")
+            print("{} {}{}".format(date_formatted, level.ljust(10), msg))
 
     def loop_actions(self):
         """

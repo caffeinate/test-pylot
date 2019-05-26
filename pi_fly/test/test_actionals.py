@@ -49,11 +49,11 @@ class TestActionals(BaseTest):
         p.join()
         log_messages = [cm.message for cm in comms_messages_recieved]
         self.assertIn('hello command hello',
-                      log_messages,
+                      str(log_messages),
                       "DummyActional.run_command didn't run")
 
         self.assertIn('dummy actional (fake_actional) is running',
-                      log_messages,
+                      str(log_messages),
                       "DummyActional.actional_loop_actions fail")
 
     def test_scoreboard_io(self):
@@ -110,12 +110,10 @@ class TestActionals(BaseTest):
     def test_build_actional_processes_nothing(self):
         scoreboard = ScoreBoard()
         self.config.ACTIONALS = []
-        governor_proc, actional_details = build_actional_processes(self.config, scoreboard)
-        self.assertEqual(None, governor_proc)
+        actional_details = build_actional_processes(self.config, scoreboard)
         self.assertEqual({}, actional_details)
 
     def test_build_actional_processes(self):
         scoreboard = ScoreBoard()
-        governor_proc, actional_details = build_actional_processes(self.config, scoreboard)
-        self.assertTrue(isinstance(governor_proc, Process))
-#         self.assertEqual({}, actional_details)
+        actional_details = build_actional_processes(self.config, scoreboard)
+        self.assertEqual(2, len(actional_details))
