@@ -4,9 +4,10 @@ Created on 8 May 2019
 @author: si
 '''
 from multiprocessing import Process, Pipe
+import time
 
 from pi_fly.actional.abstract import CommsMessage
-from pi_fly.actional.actional_management import build_actional_processes
+from pi_fly.actional.actional_management import build_actional_processes, governor_run_forever
 from pi_fly.actional.dummy import DummyActional
 from pi_fly.devices.dummy import DummyOutput
 from pi_fly.scoreboard import ScoreBoard
@@ -117,3 +118,63 @@ class TestActionals(BaseTest):
         scoreboard = ScoreBoard()
         actional_details = build_actional_processes(self.config, scoreboard)
         self.assertEqual(2, len(actional_details))
+
+    def test_pipe_on_the_scoreboard(self):
+        """
+        The scoreboard is a grouping of shared variables and uses :class:`multiprocessing.Manager`
+        to keep access thread/process safe. Can pipes be shared?!
+        """
+        scoreboard = ScoreBoard()
+        parent_conn, child_conn = Pipe()
+        scoreboard.update_value('message_pipe', parent_conn)
+
+        child_conn.send("hello pipe!")
+
+        pipe_from_scoreboard = scoreboard.get_current_value('message_pipe')
+        received_value = pipe_from_scoreboard.recv()
+        self.assertEqual("hello pipe!", received_value)
+
+    def test_governor_run_forever(self):
+        """
+        Process to read messages from actionals
+        """
+        scoreboard = ScoreBoard()
+        actional_details = build_actional_processes(self.config, scoreboard)
+        ac_names = []
+        proc_table = []
+        for ac_name, ac_parts in actional_details.items():
+            # can't pickle a process so just put the comms part on
+            scoreboard.update_value(ac_name, {'comms': ac_parts['comms']})
+            ac_names.append(ac_name)
+            proc_table.append(ac_parts['process'])
+            ac_parts['process'].start()
+
+        logging_parent, logging_child = Pipe()
+        p = Process(target=governor_run_forever, args=(scoreboard, ac_names, logging_child))
+        proc_table.append(p)
+        p.start()
+
+        # known name from config of a DummyActional
+        pipe_from_scoreboard = scoreboard.get_current_value('fake_actional_0')['comms']
+        pipe_from_scoreboard.send(CommsMessage(action="command", message="test_governor_run_forever"))
+
+        msg_count = 0
+        while logging_parent.poll(0.5):
+
+            log_msg = logging_parent.recv()
+            self.assertIsInstance(log_msg, CommsMessage)
+            msg_count += 1
+
+            msg, log_level = log_msg.message
+            if 'hello command test_governor_run_forever' in msg or msg_count >= 10:
+                self.assertEqual('INFO', log_level)
+                break
+
+        self.assertTrue(msg_count < 10, "Couldn't find expected log message")
+
+        for p in proc_table:
+            p.terminate()
+
+        for p in proc_table:
+            if p.is_alive():
+                p.join()

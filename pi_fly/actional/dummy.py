@@ -1,3 +1,5 @@
+import time
+
 from pi_fly.actional.abstract import AbstractActional
 from pi_fly.devices.dummy import DummyOutput
 
@@ -20,13 +22,22 @@ class DummyActional(AbstractActional):
     def actional_loop_actions(self):
         self.log(f"dummy actional ({self.name}) is running")
         if self.scoreboard:
-            current_value = self.scoreboard.get_current_value(self.my_input)
+            try:
+                current_value = self.scoreboard.get_current_value(self.my_input)
+            except KeyError:
+                # could do something if the input isn't yet available or if it disappeared
+                return
+
             # reply by doubling the value
             self.scoreboard.update_value('actional_reply', current_value['value_float']*2)
 
             # magic value to take a specific action on
             if current_value['value_float'] == 123:
+                # number of switches per second is rate limited so just wait until set
                 self.my_output.state = True
+                while self.my_output.state != True:
+                    time.sleep(0.01)
+                    self.my_output.state = True
 
     def run_command(self, cmd_message):
         """

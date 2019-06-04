@@ -20,14 +20,15 @@ def build_actional_processes(config, scoreboard):
     :param: config dict. like config with `ACTIONALS` as list of instances with superclass of
             :class:`AbstractActional` probably a flask config object.
 
-    :returns: tuple (Process, dict)
-            'Process' is the governor process
+    :param: scoreboard instance of :class:`pi_fly.scoreboard.Scoreboard` to pass to each
+            instantiated actional.
+
+    :returns: dict
             'dict' has key as the actionals' names and value is a dict. with 
                                                 'process' (the actional's process)
                                                 'comms' our end of the Pipe to the actional
 
-            If there are no actionals in the config the Process will be None and the dict. will be
-            empty.
+            If there are no actionals in the config the dict. will be empty.
     """
     actionals = {}
 
@@ -48,27 +49,39 @@ def build_actional_processes(config, scoreboard):
                              'comms': parent_conn,
                              }
 
-    # hmmm, this might need some more thought. Shared dict. or governor as the proxy as one of the
-    # reasons for processes is for restart if there is a problem. The actionals dict is being
-    # passed pre-fork so will loose sync when processes are added and removed.
+    # The actionals dict is being passed pre-fork so will loose sync when processes are added and
+    # removed.
     return actionals
 
-def governor_run_forever(actionals):
+def governor_run_forever(scoreboard, actional_names, logging_pipe=None):
     """
     Read comms messages from actionals. At present, these are just log messages but this is
     expected to evolve to commands for other actionals later.
 
-    :param actionals: (dict) from :function:`build_actional_processes`
+    :param: scoreboard instance of :class:`pi_fly.scoreboard.Scoreboard` which contains the
+            actionals referenced in actional_names.
+
+    :param actional_names: (list of str) of names of actionals which will be 'device names'
+            in the scoreboard. See :function:`build_actional_processes`
+
+    :param: logging_pipe: one end of a :class:`multiprocessing.Pipe`. If this argument is passed
+            log messages will be written to this instead of to STDOUT.
     """
     # TODO pass a logger, inline func for now
     def log(msg, level="INFO", date_stamp=None):
         if date_stamp is None:
             date_stamp = datetime.utcnow()
-        date_formatted = date_stamp.strftime("%Y-%m-%d %H:%M:%S")
-        print("{} {}{}".format(date_formatted, level.ljust(10), msg))
+
+        if logging_pipe:
+            cm = CommsMessage(action="log", message=(msg, level), date_stamp=date_stamp)
+            logging_pipe.send(cm)
+        else:
+            date_formatted = date_stamp.strftime("%Y-%m-%d %H:%M:%S")
+            full_msg = "{} {}{}".format(date_formatted, level.ljust(10), msg)
+            print(full_msg)
 
     # see warning about loosing sync at end of build_actional_processes
-    comms_set = {a['comms']: a_name for a_name, a in actionals.items()}
+    comms_set = {scoreboard.get_current_value(ac)['comms']: ac for ac in actional_names}
     # TODO what if an actional Proc dies. How will this handle error?
     while True:
         for a_comms in wait(comms_set.keys()):
@@ -78,7 +91,7 @@ def governor_run_forever(actionals):
                 msg = a_comms.recv()
             except EOFError:
                 log(f"Failed to read from {a_name}.", "ERROR")
-                # TODO remove it outside of this loop
+                # TODO remove failed pipe when outside of this loop
             else:
                 if not isinstance(msg, CommsMessage):
                     m = "Skipping msg received from {} as in wrong format. Got {}"
