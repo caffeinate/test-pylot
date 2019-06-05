@@ -4,7 +4,6 @@ Created on 8 May 2019
 @author: si
 '''
 from multiprocessing import Process, Pipe
-import time
 
 from pi_fly.actional.abstract import CommsMessage
 from pi_fly.actional.actional_management import build_actional_processes, governor_run_forever

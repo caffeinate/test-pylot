@@ -175,8 +175,13 @@ class DatabaseStoragePollingLoop(AbstractPollingLoop):
 
         for device_id, current_value in self.scoreboard.get_all_current_values():
             msg = f"Reading: {device_id}"
-            msg += "{sensor_id},{value_type},{value_float}"
-            self.log(msg.format(**current_value))
-            self.store_reading(current_value)
+            # TODO details to store in DB should be determined by being an instance
+            # of a parent class, maybe named tuple called DeviceReading. detecting
+            # this by checking field names isn't right.
+            device_fields = ['sensor_id', 'value_type', 'value_float']
+            if all([f in current_value for f in device_fields]):
+                msg += "{sensor_id},{value_type},{value_float}"
+                self.log(msg.format(**current_value))
+                self.store_reading(current_value)
 
         return True # all OK

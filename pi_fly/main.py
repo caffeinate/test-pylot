@@ -61,12 +61,18 @@ def run_forever(settings_label):
     
     # Actionals take an action based on inputs.
     actional_details = build_actional_processes(app.config, scoreboard)
-    governor_proc = Process(target=governor_run_forever, args=(actional_details,))
-    governor_proc.start()
-    process_list.append(governor_proc)
-    for actional_details in actional_details.values():
+    actional_names = []
+    for actional_name, actional_details in actional_details.items():
+        actional_names.append(actional_name)
         actional_details['process'].start()
         process_list.append(actional_details['process'])
+        # communications channel (instance of :class:`multiprocessing.Pipe`) is kept on the
+        # scoreboard so other processes can communicate with the actionals
+        scoreboard.update_value(actional_name, {'comms': actional_details['comms']})
+
+    governor_proc = Process(target=governor_run_forever, args=(scoreboard, actional_names,))
+    governor_proc.start()
+    process_list.append(governor_proc)
 
     options = {
         'bind': '%s:%s' % ('0.0.0.0', app.config.get('HTTP_PORT', '80')),
