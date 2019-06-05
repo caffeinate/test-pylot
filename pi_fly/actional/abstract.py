@@ -13,6 +13,9 @@ from pi_fly.polling_loop import AbstractPollingLoop
 CommsMessage = namedtuple('CommsMessage', ['action', 'message', 'date_stamp'])
 CommsMessage.__new__.__defaults__ = (None,) * len(CommsMessage._fields)
 
+CommandTemplate = namedtuple('CommandTemplate', ['command', 'description'])
+CommandTemplate.__new__.__defaults__ = (None,) * len(CommandTemplate._fields)
+
 class AbstractActional(AbstractPollingLoop):
     """
     Abstract class to take an action based on inputs.
@@ -114,3 +117,13 @@ class AbstractActional(AbstractPollingLoop):
                     to this actional.
         """
         raise NotImplementedError("Should be implemented by subclass")
+
+    @property
+    def available_commands(self):
+        """
+        Optionally implemented by subclass.
+
+        :returns: list of instances of :class:`CommandTemplate`. These describe the instructions
+            that could be sent to :method:`run_cmmand`.
+        """
+        return []

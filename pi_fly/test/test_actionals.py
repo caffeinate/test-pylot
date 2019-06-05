@@ -178,3 +178,15 @@ class TestActionals(BaseTest):
         for p in proc_table:
             if p.is_alive():
                 p.join()
+
+    def test_available_commands(self):
+
+        output = DummyOutput(name="fake_output",
+                             set_state_on_start=False
+                             )
+        a = DummyActional(name="fake_actional",
+                          my_input="the_time",
+                          my_output=output
+                          )
+        self.assertEqual(1, len(a.available_commands))
+        self.assertEqual('ABC', a.available_commands[0].command)

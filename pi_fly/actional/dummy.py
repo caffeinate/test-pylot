@@ -1,6 +1,6 @@
 import time
 
-from pi_fly.actional.abstract import AbstractActional
+from pi_fly.actional.abstract import AbstractActional, CommandTemplate
 from pi_fly.devices.dummy import DummyOutput
 
 class DummyActional(AbstractActional):
@@ -44,3 +44,10 @@ class DummyActional(AbstractActional):
         Dummy Actional just says hello back on the comms channel. It doesn't do anything useful.
         """
         self.log(f"hello command {cmd_message}")
+
+    @property
+    def available_commands(self):
+        ct = CommandTemplate(command='ABC',
+                             description='Log "hello command ABC"'
+                             )
+        return [ct]
