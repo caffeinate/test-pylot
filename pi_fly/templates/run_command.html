@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block body %}
+
+<h1>Run command</h1>
+
+{%if message %}
+<div class="alert alert-primary" role="alert">
+	{{message}}
+</div>
+{%endif%}
+
+<table class="table table-condensed">
+{%for actional_name, actional_commands in actionals_with_commands.items()%}
+	<tr>
+		<td>{{actional_name}}</td>
+		<td>{%for command, description in actional_commands%}
+			<p>{{description}}
+				<form class="form-inline" method="post">
+					<input type="hidden" name="command" value="{{command}}"/>
+					<input type="hidden" name="actional_name" value="{{actional_name}}"/>
+					<button>Go!</button>
+				</form>
+			</p>
+			{%endfor%}
+		</td>
+	</tr>
+{%endfor%}
+</table>
+
+
+{% endblock %}
