@@ -90,7 +90,7 @@ def governor_run_forever(scoreboard, actional_names, logging_pipe=None):
             try:
                 msg = a_comms.recv()
             except EOFError:
-                log(f"Failed to read from {a_name}.", "ERROR")
+                log("Failed to read from {}.".format(a_name), "ERROR")
                 # TODO remove failed pipe when outside of this loop
             else:
                 if not isinstance(msg, CommsMessage):

@@ -174,7 +174,7 @@ class DatabaseStoragePollingLoop(AbstractPollingLoop):
     def loop_actions(self):
 
         for device_id, current_value in self.scoreboard.get_all_current_values():
-            msg = f"Reading: {device_id}"
+            msg = "Reading: {}".format(device_id)
             # TODO details to store in DB should be determined by being an instance
             # of a parent class, maybe named tuple called DeviceReading. detecting
             # this by checking field names isn't right.

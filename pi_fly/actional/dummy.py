@@ -20,7 +20,7 @@ class DummyActional(AbstractActional):
         super().__init__(**kwargs)
 
     def actional_loop_actions(self):
-        self.log(f"dummy actional ({self.name}) is running")
+        self.log("dummy actional ({}) is running".format(self.name))
         if self.scoreboard:
             try:
                 current_value = self.scoreboard.get_current_value(self.my_input)
@@ -43,7 +43,7 @@ class DummyActional(AbstractActional):
         """
         Dummy Actional just says hello back on the comms channel. It doesn't do anything useful.
         """
-        self.log(f"hello command {cmd_message}")
+        self.log("hello command {}".format(cmd_message))
 
     @property
     def available_commands(self):

@@ -93,7 +93,7 @@ def create_app(settings_class, scoreboard):
             target_actional = request.values.get('actional_name', None)
             target_command = request.values.get('command', None)
             if target_actional not in ac_command:
-                abort(400, f"Unknown actional {target_actional}")
+                abort(400, "Unknown actional {}".format(target_actional))
 
             try:
                 actional_comms = scoreboard.get_current_value(target_actional)['comms']
@@ -101,7 +101,8 @@ def create_app(settings_class, scoreboard):
                 abort(500, "Actional not found in the scoreboard")
 
             actional_comms.send(CommsMessage(action="command", message=target_command))
-            page_vars['message'] = f"Running....{target_actional} .. {target_command}"
+            msg = "Running....{} .. {}".format(target_actional, target_command)
+            page_vars['message'] = msg
 
         return render_template("run_command.html", **page_vars)
 
