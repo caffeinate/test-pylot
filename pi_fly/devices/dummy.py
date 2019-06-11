@@ -28,6 +28,7 @@ class DummyOutput(AbstractOutput):
     def __init__(self, *args, **kwargs):
         self.last_change = None
         self.current_state = None # None means undefined
+        self.min_switching_time = kwargs.pop('min_switching_time', 0.01) # seconds
         super(DummyOutput, self).__init__(*args, **kwargs)
 
     def set_state(self, state):
@@ -39,11 +40,10 @@ class DummyOutput(AbstractOutput):
                         for on/off devices this will be a boolean.
         :returns: AbstractOutput.SetState
         """
-        min_switching_time = 0.01 # seconds
         now = time.time()
 
         if self.last_change is not None \
-        and now-min_switching_time < self.last_change:
+        and now - self.min_switching_time < self.last_change:
             # rapid switching not allowed by DummyOutput
             return AbstractOutput.SetState.WAITING
 

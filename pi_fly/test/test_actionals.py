@@ -8,6 +8,7 @@ from multiprocessing import Process, Pipe
 from pi_fly.actional.abstract import CommsMessage
 from pi_fly.actional.actional_management import build_actional_processes, governor_run_forever
 from pi_fly.actional.dummy import DummyActional
+from pi_fly.actional.solar_thermal import SolarThermal
 from pi_fly.devices.dummy import DummyOutput
 from pi_fly.scoreboard import ScoreBoard
 from pi_fly.test.test_base import BaseTest
@@ -189,3 +190,37 @@ class TestActionals(BaseTest):
                           )
         self.assertEqual(1, len(a.available_commands))
         self.assertEqual('ABC', a.available_commands[0].command)
+
+    def test_solar_thermal(self):
+
+        solar_pump = DummyOutput(name="fake_solar_pump",
+                             set_state_on_start=False,
+                             min_switching_time=0.00001, # set on start is just before actional's action
+                             )
+
+        solar = SolarThermal(name="solar_thermal",
+                             hot_water_bottom="hot_water_fake",
+                             solar_collector="solar_collector_fake",
+                             solar_pump=solar_pump,
+                             log_to_stdout=False,
+                             )
+
+        scoreboard = ScoreBoard()
+        solar.set_scoreboard(scoreboard)
+
+
+        fake_sensor_output = {'sensor_id': None,
+                              'value_type': "temperature",
+                              'value_float': 42.3
+                              }
+        scoreboard.update_value('solar_collector_fake', fake_sensor_output)
+
+        fake_sensor_output = {'sensor_id': None,
+                              'value_type': "temperature",
+                              'value_float': 24.0
+                              }
+        scoreboard.update_value('hot_water_fake', fake_sensor_output)
+
+        self.assertFalse(solar_pump.state)
+        solar.actional_loop_actions()
+        self.assertTrue(solar_pump.state)

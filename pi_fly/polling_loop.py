@@ -131,7 +131,7 @@ class DevicesPollingLoop(AbstractPollingLoop):
         for sensor in self.devices:
             r = sensor.get_reading()
             self.scoreboard.update_value(sensor.name, r)
-            self.log("Reading: {sensor_id},{value_type},{value_float}".format(**r))
+            self.log("Reading: {sensor_id}, {value_type}, {value_float}".format(**r))
 
         return True # all OK
 
