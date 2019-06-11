@@ -1,6 +1,7 @@
 import time
 
 from pi_fly.actional.abstract import AbstractActional, CommandTemplate
+from pi_fly.devices.abstract import AbstractOutput
 from pi_fly.devices.gpio_relay import GpioRelay
 
 class SolarThermal(AbstractActional):
@@ -22,9 +23,13 @@ class SolarThermal(AbstractActional):
         self.solar_pump = kwargs.pop('solar_pump')
         assert isinstance(self.hot_water_bottom, str)
         assert isinstance(self.solar_collector, str)
-        #assert isinstance(self.solar_pump, GpioRelay)
 
         super().__init__(**kwargs)
+
+        if not isinstance(self.solar_pump, GpioRelay):
+            self.log("Not using GpioRelay for output", level="WARNING")
+            # it must at least be an output device
+            assert issubclass(self.solar_pump.__class__, AbstractOutput)
 
         self.consecutive_failed_readings = 0
 
@@ -80,23 +85,23 @@ class SolarThermal(AbstractActional):
             # User command to run the pump
             if self.run_pump_until > time.time():
                 self.log("Manual pump run starts.")
-                #self.solar_pump.state = True
+                self.solar_pump.state = True
             else:
                 self.log("Manual pump run ends.")
-                #self.solar_pump.state = False
+                self.solar_pump.state = False
                 self.run_pump_until = 0
 
         elif solar_collector <= 1.:
             self.log("Freeze protection: running solar thermal pump.")
-            #self.solar_pump.state = True
+            self.solar_pump.state = True
         
         elif thermal_difference > self.activate_on_thermal_difference:
             self.log("Running solar thermal pump.")
-            #self.solar_pump.state = True
+            self.solar_pump.state = True
 
         elif self.solar_pump.state == True:
             self.log("Stopping solar thermal pump.")
-            #self.solar_pump.state = False
+            self.solar_pump.state = False
 
     def run_command(self, cmd_message):
         """
