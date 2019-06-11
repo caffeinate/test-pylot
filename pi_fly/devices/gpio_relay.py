@@ -36,7 +36,8 @@ class GpioRelay(AbstractOutput):
         assert isinstance(self.gpio_number, int)
 
         # initiate the hardware
-        #GPIO.setup(self.gpio_number, GPIO.OUT)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.gpio_number, GPIO.OUT)
 
         super(GpioRelay, self).__init__(*args, **kwargs)
 
@@ -53,7 +54,12 @@ class GpioRelay(AbstractOutput):
         self.log("Setting state to {}".format(state))
         self.last_change = now
         self.current_state = state
-#                 GPIO.output(self.gpio_number, GPIO.HIGH)
+
+        if state:
+            GPIO.output(self.gpio_number, GPIO.LOW)
+        else:
+            GPIO.output(self.gpio_number, GPIO.HIGH)
+
         return AbstractOutput.SetState.OK
 
     def get_state(self, force_read=False):
