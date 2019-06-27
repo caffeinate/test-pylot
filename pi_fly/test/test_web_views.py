@@ -99,7 +99,14 @@ class TestWebViews(BaseTest):
             self.proc_table.append(ac_parts['process'])
             ac_parts['process'].start()
 
-        p = Process(target=governor_run_forever, args=(self.scoreboard, ac_names, None))
+        class BlackHole:
+            "loose message so they don't log to stdout"
+            def send(self, msg):
+                pass
+
+        black_hole = BlackHole()
+
+        p = Process(target=governor_run_forever, args=(self.scoreboard, ac_names, black_hole))
         self.proc_table.append(p)
         p.start()
 
