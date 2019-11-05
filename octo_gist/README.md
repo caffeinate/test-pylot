@@ -11,10 +11,10 @@ pipenv shell
 pipenv install
 ```
 
-Run it-
+Run it (inside the pipenv environment)-
 
 ```shell
-python gogo_octogist.py caffeinate,octocat
+pipenv run python gogo_octogist.py caffeinate,octocat
 ```
 
 This will tell you about the last posts by caffeinate and octocat. 
