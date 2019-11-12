@@ -6,7 +6,7 @@ Flask + shared memory to asynchronously connect a load of Rasberry Pi sensors an
 
 Some sensors take a few seconds to return a reading, others can be polled faster. Create a load of polling loops at different speeds and use these to write to shared memory (see [scoreboard.py](scoreboard.py)).
 
-Actionals read from the scoreboard; make decisions and switch relays.
+Actionals read from the scoreboard; make decisions and switch relays. [main.py](main.py) is a good place to start having a browse.
 
 This runs the solar thermal hot water heating in my house. 
 
