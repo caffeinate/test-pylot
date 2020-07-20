@@ -27,7 +27,7 @@ class OneWireTemperatureDecode(AbstractSensorDecode):
     def __init__(self, device_name, *args, **kwargs):
         super(OneWireTemperatureDecode, self).__init__(*args, **kwargs)
         self.device_id = device_name
-        self.device_path = "/sys/bus/w1/devices/{}/w1_slave".format(device_name)
+        self.device_path = "/sys/bus/w1/devices/{}/w1_subordinate".format(device_name)
 
     def get_reading(self):
         temp = None
