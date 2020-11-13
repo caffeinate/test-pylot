@@ -9,7 +9,6 @@ from multiprocessing import Process
 import sys
 
 import gunicorn.app.base
-from gunicorn.six import iteritems
 
 from pi_fly.actional.actional_management import build_actional_processes, governor_run_forever
 from pi_fly.polling_loop import DatabaseStoragePollingLoop, build_device_polling_loops
@@ -22,20 +21,21 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
     def __init__(self, app, options=None):
         self.options = options or {}
         self.application = app
-        super(StandaloneApplication, self).__init__()
+        super().__init__()
 
     def load_config(self):
-        config = dict([(key, value) for key, value in iteritems(self.options)
-                       if key in self.cfg.settings and value is not None])
-        for key, value in iteritems(config):
+        config = {key: value for key, value in self.options.items()
+                  if key in self.cfg.settings and value is not None}
+        for key, value in config.items():
             self.cfg.set(key.lower(), value)
 
     def load(self):
         return self.application
 
+
 def run_forever(settings_label):
 
-    scoreboard = ScoreBoard() # for storing sensor values
+    scoreboard = ScoreBoard()  # for storing sensor values
     app = create_app('settings.%s_config.Config' % settings_label, scoreboard)
 
     # read input device loops from config and make a Proc per loop
@@ -51,14 +51,14 @@ def run_forever(settings_label):
     db_loop = DatabaseStoragePollingLoop(scoreboard,
                                          app.config['SQLALCHEMY_DATABASE_URI'],
                                          name="db_loop",
-                                         sample_frequency=5*60,
+                                         sample_frequency=5 * 60,
                                          log_to_stdout=True,
                                          )
     db_loop.create_db()
     p = Process(target=db_loop)
     p.start()
     process_list.append(p)
-    
+
     # Actionals take an action based on inputs.
     actional_details = build_actional_processes(app.config, scoreboard)
     actional_names = []
@@ -80,6 +80,7 @@ def run_forever(settings_label):
     }
 
     StandaloneApplication(app, options).run()
+
 
 if __name__ == '__main__':
 
