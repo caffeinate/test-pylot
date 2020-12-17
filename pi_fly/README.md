@@ -16,7 +16,8 @@ This runs the solar thermal hot water heating in my house.
 ```python
 pipenv shell
 pipenv install
-python test/test_all.py 
+export PYTHONPATH=`pwd`/../
+python -m unittest test/test_*.py
 ```
 
 ## System Install
@@ -41,7 +42,6 @@ Connect (it's in my /etc/hosts file so just `ssh -A zeropi` - the -A is so I can
 cd
 git clone git@github.com:caffeinate/test-pylot.git
 cd test-pylot
-git checkout pi_fly_combined
 
 # everything from here as root
 sudo su
