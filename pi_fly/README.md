@@ -19,12 +19,95 @@ pipenv install
 python test/test_all.py 
 ```
 
-## Run it
+## System Install
 
-For now use screen
+Installed on a Pi Zero November 2020.
+
+```
+Raspberry Pi OS (32-bit) Lite
+Minimal image based on Debian Buster
+Version:August 2020
+Release date:2020-08-20
+```
+
+Not shown here I setup the pi [without a keyboard and mouse](https://howchoo.com/pi/how-to-set-up-raspberry-pi-without-keyboard-monitor-mouse) with the following-
+* WIFI
+* SSH with keys, no passwords
+* Fixed IP address
+
+Connect (it's in my /etc/hosts file so just `ssh -A zeropi` - the -A is so I can clone from github)
 
 ```shell
-sudo python main.py live
+cd
+git clone git@github.com:caffeinate/test-pylot.git
+cd test-pylot
+git checkout pi_fly_combined
+
+# everything from here as root
+sudo su
+
+apt install vim git python3-pip
+pip3 install pipenv
+
+# enable 1-wire bus
+# .. Interfacing Options
+# ... 1-Wire
+# .... Would you like the one-wire interface to be enabled?
+raspi-config
+
+
+mkdir /data
+cd /data
+mv ~pi/test-pylot .
+
+# find 1-wire devices and put these into the settings file (e.g. for live this would be /data/test-pylot/pi_fly/settings/live_config.py)
+ls /sys/bus/w1/devices/
+
+cd /data/test-pylot/pi_fly
+pipenv install
+
+cat > /etc/systemd/system/pi_fly.service << EOF
+[Unit]
+Description=Pi Fly
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/pipenv run python -u main.py live
+WorkingDirectory=/data/test-pylot/pi_fly
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable pi_fly.service
+```
+
+## Useful Commands
+
+Stop the pi_fly service-
+
+```shell
+systemctl start pi_fly.service
+```
+
+## Alternative ways to run it
+
+Use `screen`
+
+```shell
+sudo su
+
+# one off install
+cd /data/test-pylot/pi_fly
+pipenv install
+
+# run it
+screen bash
+pipenv run python -u main.py live
 ```
 
 where `live_config.py` is the name of the settings file in `/settings/`
