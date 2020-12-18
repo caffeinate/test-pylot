@@ -7,13 +7,18 @@ from multiprocessing import Manager
 
 WORK_AROUNG_PY34_BUG = True
 
+
 class ScoreBoard:
     """
     Shared memory to hold values read from sensors.
     """
+
     def __init__(self):
-        self.manager = Manager()
-        self.shared_data = self.manager.dict()
+        # manager shouldn't be serialised and the scoreboard is passed between processes so
+        # don't keep it in instances.
+        manager = Manager()
+        # TODO - py3.8, maybe look at multiprocessing.managers.SharedMemoryManager
+        self.shared_data = manager.dict()
 
     def update_value(self, device_name, values_read):
         """
@@ -28,6 +33,12 @@ class ScoreBoard:
             # simplified - can't store previous values
             self.shared_data[device_name] = values_read
         else:
+            msg = ("Change to not keep manager as self.manager means proxy object within a proxy "
+                   "object no longer possible. Use the method detailed in paragraph starting .. "
+                   "'If standard (non-proxy) list or dict objects are contained in a referent...' "
+                   "from https://docs.python.org/3/library/multiprocessing.html#managers"
+                   )
+            raise NotImplementedError(f"TODO: {msg}")
 
             if device_name not in self.shared_data:
                 self.shared_data[device_name] = self.manager.dict()
@@ -38,7 +49,7 @@ class ScoreBoard:
             # don't store previous for now.
 
             self.shared_data[device_name]["current_value"] = values_read
-    
+
     def get_current_value(self, device_name):
         if WORK_AROUNG_PY34_BUG:
             return self.shared_data[device_name]

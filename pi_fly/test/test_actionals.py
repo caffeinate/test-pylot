@@ -13,6 +13,7 @@ from pi_fly.devices.dummy import DummyOutput
 from pi_fly.scoreboard import ScoreBoard
 from pi_fly.test.test_base import BaseTest
 
+
 class TestActionals(BaseTest):
 
     def test_communications_channel(self):
@@ -27,7 +28,7 @@ class TestActionals(BaseTest):
                           my_input="the_time",
                           my_output=DummyOutput(name="fake_output")
                           )
-        
+
         # connecting the comms channel isn't done in the config but by a controller that
         # also instantiates the actional into it's own Process.
         parent_conn, child_conn = Pipe()
@@ -156,7 +157,8 @@ class TestActionals(BaseTest):
 
         # known name from config of a DummyActional
         pipe_from_scoreboard = scoreboard.get_current_value('fake_actional_0')['comms']
-        pipe_from_scoreboard.send(CommsMessage(action="command", message="test_governor_run_forever"))
+        pipe_from_scoreboard.send(CommsMessage(
+            action="command", message="test_governor_run_forever"))
 
         msg_count = 0
         while logging_parent.poll(0.5):
@@ -194,9 +196,9 @@ class TestActionals(BaseTest):
     def test_solar_thermal(self):
 
         solar_pump = DummyOutput(name="fake_solar_pump",
-                             set_state_on_start=False,
-                             min_switching_time=0.00001, # set on start is just before actional's action
-                             )
+                                 set_state_on_start=False,
+                                 min_switching_time=0.00001,  # set on start is just before actional's action
+                                 )
 
         solar = SolarThermal(name="solar_thermal",
                              hot_water_bottom="hot_water_fake",
@@ -207,7 +209,6 @@ class TestActionals(BaseTest):
 
         scoreboard = ScoreBoard()
         solar.set_scoreboard(scoreboard)
-
 
         fake_sensor_output = {'sensor_id': None,
                               'value_type': "temperature",

@@ -13,11 +13,17 @@ This runs the solar thermal hot water heating in my house.
 
 ## Unit test and getting started
 
+The "rpi.gpio" package will only install on a Raspberry Pi. It can be commented out of the Pipfile when developing and running unit tests on another platform.
+
+The messing about with paths is just whilst this project lives in a mono-repo.
+
 ```python
+cd pi_fly
 pipenv shell
 pipenv install
-export PYTHONPATH=`pwd`/../
-python -m unittest test/test_*.py
+cd ..
+export PYTHONPATH=`pwd`
+python -m unittest pi_fly/test/test_*.py
 ```
 
 ## System Install

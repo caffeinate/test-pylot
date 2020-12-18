@@ -16,6 +16,14 @@ from pi_fly.web_view import create_app
 
 from .test_base import BaseTest
 
+
+class BlackHole:
+    "loose message so they don't log to stdout"
+
+    def send(self, msg):
+        pass
+
+
 class TestWebViews(BaseTest):
 
     def setUp(self):
@@ -28,7 +36,7 @@ class TestWebViews(BaseTest):
         # useful when using DB in memory
         self.request_context = self.app.test_request_context()
         self.request_context.push()
-        
+
         # database is normally created by the DatabaseStoragePollingLoop and web view
         # consumes from this db. But this unit test shouldn't be concerned with
         # DatabaseStoragePollingLoop so doing own create.
@@ -59,7 +67,7 @@ class TestWebViews(BaseTest):
         # sensor_id for water is currently hard coded into the dashboard's view
         reading = {'last_updated': datetime.utcnow(),
                    'sensor_id': '28-0015231007ee',
-                   'value_type': 'temperature', 
+                   'value_type': 'temperature',
                    'value_float': 123.4,
                    }
         r = Sensor(**reading)
@@ -99,11 +107,6 @@ class TestWebViews(BaseTest):
             self.proc_table.append(ac_parts['process'])
             ac_parts['process'].start()
 
-        class BlackHole:
-            "loose message so they don't log to stdout"
-            def send(self, msg):
-                pass
-
         black_hole = BlackHole()
 
         p = Process(target=governor_run_forever, args=(self.scoreboard, ac_names, black_hole))
@@ -136,7 +139,7 @@ class TestWebViews(BaseTest):
         rv = self.test_client.post('/run_command/',
                                    data={'actional_name': 'fake_actional_0',
                                          'command': 'ABC',
-                                        }
+                                         }
                                    )
         self.assertEqual(200, rv.status_code)
         # Command from :class:`actional.dummy.DummyActional`

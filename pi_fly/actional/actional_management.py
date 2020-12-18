@@ -53,6 +53,7 @@ def build_actional_processes(config, scoreboard):
     # removed.
     return actionals
 
+
 def governor_run_forever(scoreboard, actional_names, logging_pipe=None):
     """
     Read comms messages from actionals. At present, these are just log messages but this is
