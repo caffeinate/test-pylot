@@ -7,6 +7,7 @@ import os
 
 from .abstract import AbstractSensor
 
+
 class OneWireTemperature(AbstractSensor):
     def __init__(self, device_id, *args, **kwargs):
         super(OneWireTemperature, self).__init__(*args, **kwargs)
@@ -25,11 +26,11 @@ class OneWireTemperature(AbstractSensor):
         else:
             with open(self.device_path) as f:
                 sd = f.readlines()
-                if not sd[0].strip().endswith("YES") or 't=' not in sd[1]:
+                if len(sd) < 2 or not sd[0].strip().endswith("YES") or 't=' not in sd[1]:
                     self.log("Can't read {} : {}".format(self.device_id, " : ".join(sd)))
                 else:
                     parts = sd[1].strip().split('t=')
-                    temp = float(parts[1])/1000.
+                    temp = float(parts[1]) / 1000.
 
         return {'sensor_id': self.device_id,
                 'value_type': "temperature",
