@@ -6,10 +6,11 @@ Created on 31 Jan 2019
 import unittest
 import warnings
 
-from pi_fly.settings.test_config import Config
+from pi_fly.profiles.test_config import Config
 
 import logging
 logging.disable(logging.ERROR)
+
 
 class BaseTest(unittest.TestCase):
     def setUp(self):
@@ -25,13 +26,13 @@ class BaseTest(unittest.TestCase):
         #self.test_client = self.app.test_client()
 
         #self.request_context = self.app.test_request_context()
-        #self.request_context.push()
+        # self.request_context.push()
 
     def tearDown(self):
         self.config.drop_db()
         warnings.resetwarnings()
-        #self.request_context.pop()
-        
+        # self.request_context.pop()
+
     def log(self, msg):
         if self.show_log_messages:
             print(msg)

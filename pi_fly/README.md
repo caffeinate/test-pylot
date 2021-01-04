@@ -66,7 +66,7 @@ mkdir /data
 cd /data
 mv ~pi/test-pylot .
 
-# find 1-wire devices and put these into the settings file (e.g. for live this would be /data/test-pylot/pi_fly/settings/live_config.py)
+# find 1-wire devices and put these into the profile file (e.g. for live this would be /data/test-pylot/pi_fly/profiles/live_config.py)
 ls /sys/bus/w1/devices/
 
 cd /data/test-pylot/pi_fly
@@ -116,7 +116,7 @@ screen bash
 pipenv run python -u main.py live
 ```
 
-where `live_config.py` is the name of the settings file in `/settings/`
+where `live_config.py` is the name of the profile file in `/profiles/`
 
 
 ### Old Pi issues

@@ -14,25 +14,25 @@ from pi_fly.model import Sensor
 
 db = SQLAlchemy()
 
-def create_app(settings_class, scoreboard):
+
+def create_app(profiles_class, scoreboard):
     """
-    :param settings_class (str or class) to Flask settings
+    :param profiles_class (str or class) to Flask settings
     :param scoreboard instance of :class:`pi_fly.scoreboard.ScoreBoard`
     """
     app = Flask(__name__)
-    app.config.from_object(settings_class)
+    app.config.from_object(profiles_class)
     db.init_app(app)
 
     app.sensor_scoreboard = scoreboard
-
 
     @app.route('/')
     def dashboard():
         hot_water_sensor_id = "28-0015231007ee"
         last_reading = db.session.query(Sensor)\
-                            .order_by(Sensor.last_updated.desc())\
-                            .filter(Sensor.sensor_id==hot_water_sensor_id)\
-                            .first()
+            .order_by(Sensor.last_updated.desc())\
+            .filter(Sensor.sensor_id == hot_water_sensor_id)\
+            .first()
         if last_reading is None:
             return render_template("user_message.html", **{'msg': 'No sensor readings in DB.'})
 
@@ -42,7 +42,7 @@ def create_app(settings_class, scoreboard):
                      'water_temp': last_reading.value_float,
                      'bath_possible': last_reading.value_float > 45.,
                      'last_read_at': last_reading.last_updated,
-                    }
+                     }
 
         return render_template("dashboard.html", **page_vars)
 
@@ -53,8 +53,8 @@ def create_app(settings_class, scoreboard):
         """
         # consolidate all sensors on the scoreboard with all input devices listed in
         # the config. Give a warning message when these don't tally.
-        sensor_values = {k: v for k,v in current_app.sensor_scoreboard.get_all_current_values()}
-        p = {} # sensor name => {'display_value': '', 'display_class': ''}
+        sensor_values = {k: v for k, v in current_app.sensor_scoreboard.get_all_current_values()}
+        p = {}  # sensor name => {'display_value': '', 'display_class': ''}
         for input_device in current_app.config['INPUT_DEVICES']:
             assert isinstance(input_device, AbstractSensor)
             if input_device.name in sensor_values:
@@ -72,7 +72,7 @@ def create_app(settings_class, scoreboard):
                            'display_class': 'WARNING',
                            }
 
-        page_vars = dict(sensors = p)
+        page_vars = dict(sensors=p)
         return render_template("sensor_scoreboard.html", **page_vars)
 
     @app.route('/run_command/', methods=['GET', 'POST'])

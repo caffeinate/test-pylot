@@ -33,10 +33,10 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
         return self.application
 
 
-def run_forever(settings_label):
+def run_forever(profile_label):
 
     scoreboard = ScoreBoard()  # for storing sensor values
-    app = create_app('settings.%s_config.Config' % settings_label, scoreboard)
+    app = create_app('profiles.%s_config.Config' % profile_label, scoreboard)
 
     # read input device loops from config and make a Proc per loop
     # proc instead of async because of isolation in event of lock or exception or other failure
@@ -85,7 +85,7 @@ def run_forever(settings_label):
 if __name__ == '__main__':
 
     if len(sys.argv) != 2:
-        msg = "usage: python main.py <settings label>\n"
+        msg = "usage: python main.py <profile label>\n"
         sys.stderr.write(msg)
         sys.exit(-1)
 

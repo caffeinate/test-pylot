@@ -16,6 +16,7 @@ CommsMessage.__new__.__defaults__ = (None,) * len(CommsMessage._fields)
 CommandTemplate = namedtuple('CommandTemplate', ['command', 'description'])
 CommandTemplate.__new__.__defaults__ = (None,) * len(CommandTemplate._fields)
 
+
 class AbstractActional(AbstractPollingLoop):
     """
     Abstract class to take an action based on inputs.
@@ -38,6 +39,7 @@ class AbstractActional(AbstractPollingLoop):
     (c) send log messages - because each Actional runs within an isolated process it makes sense
     for the parent process to collate log messages before outputting them. 
     """
+
     def __init__(self, **kwargs):
         """
         possible kwargs-
@@ -52,7 +54,7 @@ class AbstractActional(AbstractPollingLoop):
     def set_scoreboard(self, scoreboard):
         """
         Other subclasses of :class:`AbstractPollingLoop` set the scoreboard in the constructor
-        but actionals are inititated in settings where the scoreboard isn't available so it's
+        but actionals are initiated in from a profile where the scoreboard isn't available so it's
         set later using this method.
         """
         self.scoreboard = scoreboard
