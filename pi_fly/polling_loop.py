@@ -14,18 +14,18 @@ from sqlalchemy.orm import sessionmaker
 from pi_fly.model import Sensor, Base
 
 
-def build_device_polling_loops(config, scoreboard):
+def build_device_polling_loops(profile, scoreboard):
     """
-    :param: config dict. like config with `POLLING_LOOPS` as list of dicts.
-            probably a flask config object.
+    :param: config dict. with key `POLLING_LOOPS` or object with `POLLING_LOOPS` attribute. In both
+            cases this is a list of dicts. probably a flask config object.
 
     :returns: list of instantiated :class:`pi_fly.polling_loop.DevicesPollingLoop`s
             ready from :method:`run_forever` to be run on.
     """
-    if isinstance(config, dict):
-        loops_config = config['POLLING_LOOPS']
+    if isinstance(profile, dict):
+        loops_config = profile['POLLING_LOOPS']
     else:
-        loops_config = config.POLLING_LOOPS
+        loops_config = profile.POLLING_LOOPS
 
     p_loops = []
     for pl_config in loops_config:
@@ -33,10 +33,11 @@ def build_device_polling_loops(config, scoreboard):
 
     return p_loops
 
+
 class AbstractPollingLoop:
 
     SAMPLE_FREQUENCY = 2.  # can be class variable in subclasses or passed as kwarg.
-                            # It's samples per second.
+    # It's samples per second.
 
     def __init__(self, scoreboard, **kwargs):
         """
@@ -118,6 +119,7 @@ class AbstractPollingLoop:
         """
         return self.run_forever()
 
+
 class DevicesPollingLoop(AbstractPollingLoop):
     def __init__(self, scoreboard, **kwargs):
         """
@@ -133,7 +135,8 @@ class DevicesPollingLoop(AbstractPollingLoop):
             self.scoreboard.update_value(sensor.name, r)
             self.log("Reading: {sensor_id}, {value_type}, {value_float}".format(**r))
 
-        return True # all OK
+        return True  # all OK
+
 
 class DatabaseStoragePollingLoop(AbstractPollingLoop):
     def __init__(self, scoreboard, db_dsn, **kwargs):
@@ -184,4 +187,4 @@ class DatabaseStoragePollingLoop(AbstractPollingLoop):
                 self.log(msg.format(**current_value))
                 self.store_reading(current_value)
 
-        return True # all OK
+        return True  # all OK

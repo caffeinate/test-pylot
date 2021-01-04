@@ -6,7 +6,7 @@ Created on 31 Jan 2019
 import unittest
 import warnings
 
-from pi_fly.profiles.test_config import Config
+from pi_fly.profiles.test_profile import Profile
 
 import logging
 logging.disable(logging.ERROR)
@@ -15,8 +15,8 @@ logging.disable(logging.ERROR)
 class BaseTest(unittest.TestCase):
     def setUp(self):
 
-        self.config = Config()
-        #self.app = create_app(self.config)
+        self.profile = Profile()
+        #self.app = create_app(self.profile)
         self.show_log_messages = True
 
         warning_msg = ('Dialect sqlite\+pysqlite does \*not\* support Decimal'
@@ -29,7 +29,7 @@ class BaseTest(unittest.TestCase):
         # self.request_context.push()
 
     def tearDown(self):
-        self.config.drop_db()
+        self.profile.drop_db()
         warnings.resetwarnings()
         # self.request_context.pop()
 

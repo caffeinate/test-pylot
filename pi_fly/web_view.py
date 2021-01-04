@@ -49,10 +49,10 @@ def create_app(profiles_class, scoreboard):
     @app.route('/sensor_scoreboard/')
     def sensor_scoreboard():
         """
-        Show the current values for all input devices in the config.
+        Show the current values for all input devices in the profile.
         """
         # consolidate all sensors on the scoreboard with all input devices listed in
-        # the config. Give a warning message when these don't tally.
+        # the profile. Give a warning message when these don't tally.
         sensor_values = {k: v for k, v in current_app.sensor_scoreboard.get_all_current_values()}
         p = {}  # sensor name => {'display_value': '', 'display_class': ''}
         for input_device in current_app.config['INPUT_DEVICES']:

@@ -30,7 +30,7 @@ class TestWebViews(BaseTest):
         super().setUp()
 
         self.scoreboard = ScoreBoard()
-        self.app = create_app(self.config, self.scoreboard)
+        self.app = create_app(self.profile, self.scoreboard)
         self.test_client = self.app.test_client()
 
         # useful when using DB in memory
@@ -40,7 +40,7 @@ class TestWebViews(BaseTest):
         # database is normally created by the DatabaseStoragePollingLoop and web view
         # consumes from this db. But this unit test shouldn't be concerned with
         # DatabaseStoragePollingLoop so doing own create.
-        engine = create_engine(self.config.SQLALCHEMY_DATABASE_URI)
+        engine = create_engine(self.profile.SQLALCHEMY_DATABASE_URI)
         Base.metadata.create_all(engine)
         DBSession = sessionmaker(bind=engine)
         self.db_session = DBSession()
@@ -94,10 +94,10 @@ class TestWebViews(BaseTest):
 
     def run_actionals(self):
         """
-        run actionals from config and governor to manage them. Store
+        run actionals from profile and governor to manage them. Store
         details to allow :method:`shutdown_procs` on self.
         """
-        actional_details = build_actional_processes(self.config, self.scoreboard)
+        actional_details = build_actional_processes(self.profile, self.scoreboard)
         ac_names = []
         self.proc_table = []
         for ac_name, ac_parts in actional_details.items():

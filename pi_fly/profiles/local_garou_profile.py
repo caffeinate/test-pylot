@@ -3,11 +3,12 @@ Created on 25 Jan 2019
 
 @author: si
 '''
-from .global_config import BaseConfig
+from .global_profile import BaseProfile
 from pi_fly.devices.dummy import DummyInput, DummyOutput
 
-class Config(BaseConfig):
-    DEBUG=True
+
+class Profile(BaseProfile):
+    DEBUG = True
     SQLALCHEMY_DATABASE_URI = "sqlite:////home/si/Desktop/sensors.db"
     INPUT_DEVICES = [DummyInput(name="fake_input"),
                      ]
@@ -18,5 +19,5 @@ class Config(BaseConfig):
         {'name': 'short_loop',
          'sample_frequency': .2,
          'devices': INPUT_DEVICES,
-        }
-        ]
+         }
+    ]

@@ -17,8 +17,8 @@ def build_actional_processes(config, scoreboard):
 
     None of the Processes in the returned items have been started.
 
-    :param: config dict. like config with `ACTIONALS` as list of instances with superclass of
-            :class:`AbstractActional` probably a flask config object.
+    :param: config dict. or obj with attributes `ACTIONALS` which is a as list of instances with
+            superclass of :class:`AbstractActional` probably a flask config object.
 
     :param: scoreboard instance of :class:`pi_fly.scoreboard.Scoreboard` to pass to each
             instantiated actional.

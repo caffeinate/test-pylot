@@ -21,7 +21,7 @@ class TestActionals(BaseTest):
         Send a command to the dummy actional and it replies saying the command was accepted.
         It then send a log message as well.
         """
-        # this bit will be done in the config file because the actionals available are deployment
+        # this bit will be done in the profile file because the actionals available are deployment
         # specific along with the sensors that the actional reads from and the devices it writes
         # to.
         a = DummyActional(name="fake_actional",
@@ -29,7 +29,7 @@ class TestActionals(BaseTest):
                           my_output=DummyOutput(name="fake_output")
                           )
 
-        # connecting the comms channel isn't done in the config but by a controller that
+        # connecting the comms channel isn't done in the profile but by a controller that
         # also instantiates the actional into it's own Process.
         parent_conn, child_conn = Pipe()
         a.set_comms_channel(child_conn)
@@ -111,13 +111,13 @@ class TestActionals(BaseTest):
 
     def test_build_actional_processes_nothing(self):
         scoreboard = ScoreBoard()
-        self.config.ACTIONALS = []
-        actional_details = build_actional_processes(self.config, scoreboard)
+        self.profile.ACTIONALS = []
+        actional_details = build_actional_processes(self.profile, scoreboard)
         self.assertEqual({}, actional_details)
 
     def test_build_actional_processes(self):
         scoreboard = ScoreBoard()
-        actional_details = build_actional_processes(self.config, scoreboard)
+        actional_details = build_actional_processes(self.profile, scoreboard)
         self.assertEqual(2, len(actional_details))
 
     def test_pipe_on_the_scoreboard(self):
@@ -140,7 +140,7 @@ class TestActionals(BaseTest):
         Process to read messages from actionals
         """
         scoreboard = ScoreBoard()
-        actional_details = build_actional_processes(self.config, scoreboard)
+        actional_details = build_actional_processes(self.profile, scoreboard)
         ac_names = []
         proc_table = []
         for ac_name, ac_parts in actional_details.items():
@@ -155,7 +155,7 @@ class TestActionals(BaseTest):
         proc_table.append(p)
         p.start()
 
-        # known name from config of a DummyActional
+        # known name from profile of a DummyActional
         pipe_from_scoreboard = scoreboard.get_current_value('fake_actional_0')['comms']
         pipe_from_scoreboard.send(CommsMessage(
             action="command", message="test_governor_run_forever"))

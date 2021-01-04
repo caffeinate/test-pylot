@@ -36,9 +36,9 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 def run_forever(profile_label):
 
     scoreboard = ScoreBoard()  # for storing sensor values
-    app = create_app('profiles.%s_config.Config' % profile_label, scoreboard)
+    app = create_app('profiles.%s_profile.Profile' % profile_label, scoreboard)
 
-    # read input device loops from config and make a Proc per loop
+    # read input device loops from profile and make a Proc per loop
     # proc instead of async because of isolation in event of lock or exception or other failure
     process_list = []
     polling_loops = build_device_polling_loops(app.config, scoreboard)

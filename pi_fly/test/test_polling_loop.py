@@ -7,9 +7,10 @@ import sqlite3
 
 from pi_fly.devices.dummy import DummyInput
 from pi_fly.polling_loop import DevicesPollingLoop, build_device_polling_loops,\
-                                DatabaseStoragePollingLoop
+    DatabaseStoragePollingLoop
 from pi_fly.scoreboard import ScoreBoard
 from pi_fly.test.test_base import BaseTest
+
 
 class TestPollingLoop(BaseTest):
 
@@ -20,7 +21,7 @@ class TestPollingLoop(BaseTest):
         """
         scoreboard = ScoreBoard()
         devices = [DummyInput(name="fake_input")]
-        
+
         p_loop = DevicesPollingLoop(scoreboard,
                                     name="a_loop",
                                     sample_frequency=0.1,
@@ -34,12 +35,12 @@ class TestPollingLoop(BaseTest):
         time_sensor_data = scoreboard.get_current_value("fake_input")
         self.assertTrue(time_sensor_data['value_float'] > 1549043210)
 
-    def test_loops_from_config(self):
+    def test_loops_from_profile(self):
         """
-        Build PollingLoops from config variables.
+        Build PollingLoops from profile variables.
         """
         scoreboard = ScoreBoard()
-        polling_loops = build_device_polling_loops(self.config, scoreboard)
+        polling_loops = build_device_polling_loops(self.profile, scoreboard)
 
         self.assertEqual(1, len(polling_loops))
         p_test_loop = polling_loops[0]
@@ -64,27 +65,27 @@ class TestPollingLoop(BaseTest):
 
         # make devices store something on scoreboard
         devices_loop = DevicesPollingLoop(scoreboard,
-                                    name="a_loop",
-                                    sample_frequency=0.1,
-                                    devices=devices
-                                    )
+                                          name="a_loop",
+                                          sample_frequency=0.1,
+                                          devices=devices
+                                          )
         devices_loop._single_loop()
 
         # can DB loop see these values
 
         # Memory doesn't seem to create tables?  e.g. 'sqlite:///:memory:' so
-        # config must be using temp file.
+        # profile must be using temp file.
         db_loop = DatabaseStoragePollingLoop(scoreboard,
-                                             self.config.SQLALCHEMY_DATABASE_URI,
+                                             self.profile.SQLALCHEMY_DATABASE_URI,
                                              name="db_loop",
                                              sample_frequency=600,
-                                            )
+                                             )
         db_loop.create_db()
         db_loop._single_loop()
 
         # Read from DB (without sqlalchemy) and get values for both fake sensors
-        db_connection=sqlite3.connect(self.config.DB_FILE)
-        db_cursor=db_connection.cursor()
+        db_connection = sqlite3.connect(self.profile.DB_FILE)
+        db_cursor = db_connection.cursor()
         db_cursor.execute("select value_float from sensor")
         rows = [r for r in db_cursor.fetchall()]
 
