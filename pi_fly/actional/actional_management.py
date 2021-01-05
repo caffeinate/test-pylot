@@ -7,7 +7,11 @@ from datetime import datetime
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import wait
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from pi_fly.actional.abstract import CommsMessage
+from pi_fly.model import Base, Event
 
 
 def build_actional_processes(config, scoreboard):
@@ -54,7 +58,7 @@ def build_actional_processes(config, scoreboard):
     return actionals
 
 
-def governor_run_forever(scoreboard, actional_names, logging_pipe=None):
+def governor_run_forever(scoreboard, actional_names, profile=None, logging_pipe=None):
     """
     Read comms messages from actionals. At present, these are just log messages but this is
     expected to evolve to commands for other actionals later.
@@ -64,6 +68,9 @@ def governor_run_forever(scoreboard, actional_names, logging_pipe=None):
 
     :param actional_names: (list of str) of names of actionals which will be 'device names'
             in the scoreboard. See :function:`build_actional_processes`
+
+    :param profile (dict or obj with attrib) 'SQLALCHEMY_DATABASE_URI'. Only needed if
+            actionals create events which are stored in the DB.
 
     :param: logging_pipe: one end of a :class:`multiprocessing.Pipe`. If this argument is passed
             log messages will be written to this instead of to STDOUT.
@@ -81,9 +88,25 @@ def governor_run_forever(scoreboard, actional_names, logging_pipe=None):
             full_msg = "{} {}{}".format(date_formatted, level.ljust(10), msg)
             print(full_msg)
 
+    def connect_db():
+        "Returns session object"
+        if profile is None:
+            raise ValueError('profile not available and events need access to DB')
+
+        if isinstance(profile, dict):
+            db_uri = profile['SQLALCHEMY_DATABASE_URI']
+        else:
+            db_uri = profile.SQLALCHEMY_DATABASE_URI
+
+        engine = create_engine(db_uri)
+        Base.metadata.create_all(engine)
+        DBSession = sessionmaker(bind=engine)
+        return DBSession()
+
     # see warning about loosing sync at end of build_actional_processes
     comms_set = {scoreboard.get_current_value(ac)['comms']: ac for ac in actional_names}
     # TODO what if an actional Proc dies. How will this handle error?
+    db_session = None
     while True:
         for a_comms in wait(comms_set.keys()):
             a_name = comms_set[a_comms]
@@ -97,9 +120,24 @@ def governor_run_forever(scoreboard, actional_names, logging_pipe=None):
                 if not isinstance(msg, CommsMessage):
                     m = "Skipping msg received from {} as in wrong format. Got {}"
                     log(m.format(a_name, str(msg)), "ERROR")
+
                 elif msg.action == 'log':
                     l_msg, l_level = msg.message
                     log_msg = "({}) {}".format(a_name, l_msg)
                     log(log_msg, level=l_level, date_stamp=msg.date_stamp)
+
+                elif msg.action == 'event':
+                    # Events are stored in the database
+                    if db_session is None:
+                        db_session = connect_db()
+
+                    e = {'start': msg.date_stamp,
+                         'end': msg.date_stamp_end,
+                         'source': a_name,
+                         'label': msg.message,
+                         }
+                    db_session.add(Event(**e))
+                    db_session.commit()
+
                 else:
                     log("Unknown message type received by actional governor", "ERROR")

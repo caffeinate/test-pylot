@@ -70,7 +70,11 @@ def run_forever(profile_label):
         # scoreboard so other processes can communicate with the actionals
         scoreboard.update_value(actional_name, {'comms': actional_details['comms']})
 
-    governor_proc = Process(target=governor_run_forever, args=(scoreboard, actional_names,))
+    governor_kwargs = {'scoreboard': scoreboard,
+                       'actional_names': actional_names,
+                       'profile': app.config
+                       }
+    governor_proc = Process(target=governor_run_forever, kwargs=governor_kwargs)
     governor_proc.start()
     process_list.append(governor_proc)
 

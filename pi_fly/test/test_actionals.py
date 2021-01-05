@@ -3,13 +3,18 @@ Created on 8 May 2019
 
 @author: si
 '''
+from datetime import datetime
 from multiprocessing import Process, Pipe
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from pi_fly.actional.abstract import CommsMessage
 from pi_fly.actional.actional_management import build_actional_processes, governor_run_forever
 from pi_fly.actional.dummy import DummyActional
 from pi_fly.actional.solar_thermal import SolarThermal
 from pi_fly.devices.dummy import DummyOutput
+from pi_fly.model import Base, Event
 from pi_fly.scoreboard import ScoreBoard
 from pi_fly.test.test_base import BaseTest
 
@@ -135,11 +140,12 @@ class TestActionals(BaseTest):
         received_value = pipe_from_scoreboard.recv()
         self.assertEqual("hello pipe!", received_value)
 
-    def test_governor_run_forever(self):
+    def build_governor(self, scoreboard, expected_log_message, messages_to_send):
         """
-        Process to read messages from actionals
+        Args:
+            expected_log_message (str) - finish immediately when this message is received.
+            messages_to_send (list of CommsMessage) to send to fake_actional_0
         """
-        scoreboard = ScoreBoard()
         actional_details = build_actional_processes(self.profile, scoreboard)
         ac_names = []
         proc_table = []
@@ -151,28 +157,34 @@ class TestActionals(BaseTest):
             ac_parts['process'].start()
 
         logging_parent, logging_child = Pipe()
-        p = Process(target=governor_run_forever, args=(scoreboard, ac_names, logging_child))
+        governor_kwargs = {'scoreboard': scoreboard,
+                           'actional_names': ac_names,
+                           'profile': self.profile,
+                           'logging_pipe': logging_child
+                           }
+        p = Process(target=governor_run_forever, kwargs=governor_kwargs)
         proc_table.append(p)
         p.start()
 
         # known name from profile of a DummyActional
         pipe_from_scoreboard = scoreboard.get_current_value('fake_actional_0')['comms']
-        pipe_from_scoreboard.send(CommsMessage(
-            action="command", message="test_governor_run_forever"))
+        for comms_message in messages_to_send:
+            pipe_from_scoreboard.send(comms_message)
 
-        msg_count = 0
-        while logging_parent.poll(0.5):
+        msgs = []
+        max_messages = 20  # more than this means fail
+        while logging_parent.poll(1):
 
             log_msg = logging_parent.recv()
             self.assertIsInstance(log_msg, CommsMessage)
-            msg_count += 1
 
-            msg, log_level = log_msg.message
-            if 'hello command test_governor_run_forever' in msg or msg_count >= 10:
-                self.assertEqual('INFO', log_level)
+            msg = log_msg.message[0]
+            msgs.append(msg)
+            if expected_log_message in msg:
                 break
 
-        self.assertTrue(msg_count < 10, "Couldn't find expected log message")
+            if len(msgs) >= max_messages:
+                break
 
         for p in proc_table:
             p.terminate()
@@ -180,6 +192,21 @@ class TestActionals(BaseTest):
         for p in proc_table:
             if p.is_alive():
                 p.join()
+
+        return msgs
+
+    def test_governor_run_forever(self):
+        """
+        Read log messages from actionals that are being run by the governor.
+        """
+        scoreboard = ScoreBoard()
+        expected_log_message = 'hello command hello'
+        test_command = [CommsMessage(action="command", message="hello"), ]
+        log_msgs = self.build_governor(scoreboard,
+                                       expected_log_message=expected_log_message,
+                                       messages_to_send=test_command
+                                       )
+        self.assertIn(expected_log_message, "".join(log_msgs), "Couldn't find expected log message")
 
     def test_available_commands(self):
 
@@ -190,8 +217,9 @@ class TestActionals(BaseTest):
                           my_input="the_time",
                           my_output=output
                           )
-        self.assertEqual(1, len(a.available_commands))
-        self.assertEqual('ABC', a.available_commands[0].command)
+        self.assertEqual(2, len(a.available_commands))
+        dummy_actional_commands = set([ax.command for ax in a.available_commands])
+        self.assertEqual(set(['hello', 'send_event']), dummy_actional_commands)
 
     def test_solar_thermal(self):
 
@@ -225,3 +253,38 @@ class TestActionals(BaseTest):
         self.assertFalse(solar_pump.state)
         solar.actional_loop_actions()
         self.assertTrue(solar_pump.state)
+
+    def test_event(self):
+        """
+        Test the dummy actional can send an event that would get back to the governor and then on to database.
+        """
+        # database is normally created by the DatabaseStoragePollingLoop and web view
+        # consumes from this db. But this unit test shouldn't be concerned with
+        # DatabaseStoragePollingLoop so doing own create.
+        engine = create_engine(self.profile.SQLALCHEMY_DATABASE_URI)
+        Base.metadata.create_all(engine)
+        DBSession = sessionmaker(bind=engine)
+        db_session = DBSession()
+
+        all_events = [r for r in db_session.query(Event).all()]
+        self.assertEqual(0, len(all_events), "DB table should be empty")
+
+        scoreboard = ScoreBoard()
+        expected_log_message = 'example event sent'
+        test_command = [CommsMessage(action="command", message="send_event"),
+                        CommsMessage(action="command", message="terminate"),
+                        ]
+        log_msgs = self.build_governor(scoreboard,
+                                       expected_log_message=expected_log_message,
+                                       messages_to_send=test_command
+                                       )
+        self.assertIn(expected_log_message, "".join(log_msgs), "Couldn't find expected log message")
+
+        all_events = [r for r in db_session.query(Event).all()]
+        self.assertEqual(1, len(all_events), "One event should be in the DB")
+
+        test_event = all_events[0]
+        self.assertIsInstance(test_event.start, datetime)
+        self.assertIsInstance(test_event.end, datetime)
+        self.assertEqual(test_event.source, 'fake_actional_0')
+        self.assertEqual(test_event.label, 'example event')

@@ -4,6 +4,7 @@ from pi_fly.actional.abstract import AbstractActional, CommandTemplate
 from pi_fly.devices.abstract import AbstractOutput
 from pi_fly.devices.gpio_relay import GpioRelay
 
+
 class SolarThermal(AbstractActional):
     SAMPLE_FREQUENCY = 5.
 
@@ -15,8 +16,8 @@ class SolarThermal(AbstractActional):
                       solar thermal.
           solar_collector (str) from :class:`pi_fly.devices.one_wire_temperature.OneWireTemperature`
                         The temperature on the solar collector's manifold.
-          solar_pump (instance of :class:`DummyOutput`) on off relay switch to run the solar
-                        collector's water pump.
+          solar_pump (instance of :class:`DummyOutput` for testing or :class:`GpioRelay` for live)
+                      on off relay switch to run the solar collector's water pump.
         """
         self.hot_water_bottom = kwargs.pop('hot_water_bottom')
         self.solar_collector = kwargs.pop('solar_collector')
@@ -48,7 +49,8 @@ class SolarThermal(AbstractActional):
         """
         # TODO take time of reading into account
         try:
-            hot_water_bottom = self.scoreboard.get_current_value(self.hot_water_bottom)['value_float']
+            hot_water_bottom = self.scoreboard.get_current_value(self.hot_water_bottom)[
+                'value_float']
         except KeyError:
             # could do something if the input isn't yet available or if it disappeared
             hot_water_bottom = None
@@ -94,7 +96,7 @@ class SolarThermal(AbstractActional):
         elif solar_collector <= 1.:
             self.log("Freeze protection: running solar thermal pump.")
             self.solar_pump.state = True
-        
+
         elif thermal_difference > self.activate_on_thermal_difference:
             self.log("Running solar thermal pump.")
             self.solar_pump.state = True
@@ -116,12 +118,12 @@ class SolarThermal(AbstractActional):
 
     @property
     def available_commands(self):
-        cts = [ CommandTemplate(command='run:5',
-                                description='Run the solar pump for 5 seconds'
-                                ),
-                CommandTemplate(command='run:60',
-                                description='Run the solar pump for 60 seconds'
-                                ),
-                ]
+        cts = [CommandTemplate(command='run:5',
+                               description='Run the solar pump for 5 seconds'
+                               ),
+               CommandTemplate(command='run:60',
+                               description='Run the solar pump for 60 seconds'
+                               ),
+               ]
 
         return cts

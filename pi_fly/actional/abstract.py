@@ -8,9 +8,9 @@ from datetime import datetime
 
 from pi_fly.polling_loop import AbstractPollingLoop
 
-# only 'action' can be 'command'|'log', 'message' is mixed. Up to receiver.
+# only 'action' can be 'command'|'log'|'event', 'message' is mixed. Up to receiver.
 # is action is 'command' and message == 'terminate' the process will end at end of next loop
-CommsMessage = namedtuple('CommsMessage', ['action', 'message', 'date_stamp'])
+CommsMessage = namedtuple('CommsMessage', ['action', 'message', 'date_stamp', 'date_stamp_end'])
 CommsMessage.__new__.__defaults__ = (None,) * len(CommsMessage._fields)
 
 CommandTemplate = namedtuple('CommandTemplate', ['command', 'description'])
@@ -75,6 +75,38 @@ class AbstractActional(AbstractPollingLoop):
             # try stdout/whatever has been set locally
             super().log(msg, level)
 
+    def event(self, event_label, event_start=None, event_end=None):
+        """
+        Record an event in the database. The stored event will have a 'last_updated' field, this is
+        the time the event is stored in the database as this method returns asynchronously. If
+        event_start is specified this will be the time of the event and also specifying the
+        event_end means the event had a duration.
+
+        The governor (see :function:`governor_run_forever`) is responsible for storing the event in
+        the database. See :class:`models.Event` for the database model. The name of the actional
+        calling the :method:`event` is stored as the field 'source'.
+
+        Args:
+            event_label (str) name of the event. e.g. 'pump running'
+            event_start (datetime) optional
+            event_end (datetime) optional - can only be given if event_start is also given.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError
+        """
+        if event_end and not event_start:
+            raise ValueError("event_end set without event_start")
+
+        cm = CommsMessage(action="event",
+                          message=event_label,
+                          date_stamp=event_start,
+                          date_stamp_end=event_end
+                          )
+        self.comms_channel.send(cm)
+
     def loop_actions(self):
         """
         What to do each time the loop is run.
@@ -92,7 +124,7 @@ class AbstractActional(AbstractPollingLoop):
                 else:
                     self.run_command(msg.message)
             else:
-                self.log("Unknown message type received on comms channel")
+                self.log(f"Unknown message type '{msg.action}' received on comms channel")
 
         # run subclass's actions.
         self.actional_loop_actions()

@@ -109,7 +109,8 @@ class TestWebViews(BaseTest):
 
         black_hole = BlackHole()
 
-        p = Process(target=governor_run_forever, args=(self.scoreboard, ac_names, black_hole))
+        governor_args = (self.scoreboard, ac_names, self.profile, black_hole)
+        p = Process(target=governor_run_forever, args=governor_args)
         self.proc_table.append(p)
         p.start()
 
@@ -133,7 +134,7 @@ class TestWebViews(BaseTest):
         rv = self.test_client.get('/run_command/')
         self.assertEqual(200, rv.status_code)
         # Command from :class:`actional.dummy.DummyActional`
-        self.assertIn(b'Log &#34;hello command ABC&#34;', rv.data)
+        self.assertIn(b'Log &#34;hello command hello&#34;', rv.data)
 
         # next POST it
         rv = self.test_client.post('/run_command/',

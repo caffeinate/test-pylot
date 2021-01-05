@@ -1,7 +1,9 @@
+from datetime import datetime, timedelta
 import time
 
-from pi_fly.actional.abstract import AbstractActional, CommandTemplate
+from pi_fly.actional.abstract import AbstractActional, CommandTemplate, CommsMessage
 from pi_fly.devices.dummy import DummyOutput
+
 
 class DummyActional(AbstractActional):
     SAMPLE_FREQUENCY = 0.5
@@ -29,7 +31,7 @@ class DummyActional(AbstractActional):
                 return
 
             # reply by doubling the value
-            self.scoreboard.update_value('actional_reply', current_value['value_float']*2)
+            self.scoreboard.update_value('actional_reply', current_value['value_float'] * 2)
 
             # magic value to take a specific action on
             if current_value['value_float'] == 123:
@@ -43,11 +45,26 @@ class DummyActional(AbstractActional):
         """
         Dummy Actional just says hello back on the comms channel. It doesn't do anything useful.
         """
-        self.log("hello command {}".format(cmd_message))
+        if cmd_message == 'hello':
+            self.log("hello command {}".format(cmd_message))
+
+        elif cmd_message == 'send_event':
+            event_start = datetime.utcnow()
+            event_end = event_start + timedelta(minutes=1)
+            self.event('example event', event_start, event_end)
+
+            self.log("example event sent")
+
+        else:
+            self.log("Unknown command {}".format(cmd_message), level="ERROR")
 
     @property
     def available_commands(self):
-        ct = CommandTemplate(command='ABC',
-                             description='Log "hello command ABC"'
-                             )
-        return [ct]
+        cmds = [CommandTemplate(command='hello',
+                                description='Log "hello command hello"'
+                                ),
+                CommandTemplate(command='send_event',
+                                description='Send an event to the governor'
+                                ),
+                ]
+        return cmds
