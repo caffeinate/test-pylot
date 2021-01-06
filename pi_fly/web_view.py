@@ -65,8 +65,9 @@ def create_app(profiles_class, scoreboard):
                            }
                 p[input_device.name] = display
 
+        actional_names = [a.name for a in current_app.config['ACTIONALS']]
         for name, values in sensor_values.items():
-            if name not in p:
+            if name not in p and name not in actional_names:
                 # in scoreboard but not in config??
                 p[name] = {'display_value': str(values),
                            'display_class': 'WARNING',

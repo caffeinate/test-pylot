@@ -82,6 +82,7 @@ class TestWebViews(BaseTest):
         """
         Check the shared memory for holding sensor values can be accessed.
         """
+        self.run_actionals()  # these share the dashboard
         values_read = {'sensor_id': None,
                        'value_type': "time",
                        'value_float': 1553982125.797958
@@ -91,6 +92,10 @@ class TestWebViews(BaseTest):
         rv = self.test_client.get('/sensor_scoreboard/')
         self.assertEqual(200, rv.status_code)
         self.assertIn(b'1553982125.797958', rv.data, "Time of fake input sensor not found.")
+        self.assertNotIn('fake_actional_0',
+                         str(rv.data),
+                         'Actionals shouldnt be in the scoreboard view'
+                         )
 
     def run_actionals(self):
         """

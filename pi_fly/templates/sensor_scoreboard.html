@@ -7,7 +7,7 @@
 
 <table class="table table-condensed">
 {%for device_name, display in sensors.items()%}
-	<tr>
+	<tr {%if display['display_class']%}class="{{display['display_class']}}"{%endif%}>
 		<td>{{device_name}}</td>
 		<td>{{display['display_value']}}</td>
 	</tr>
