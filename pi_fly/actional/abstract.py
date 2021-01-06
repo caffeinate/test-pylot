@@ -75,12 +75,12 @@ class AbstractActional(AbstractPollingLoop):
             # try stdout/whatever has been set locally
             super().log(msg, level)
 
-    def event(self, event_label, event_start=None, event_end=None):
+    def send_event(self, event_label, event_start=None, event_end=None):
         """
-        Record an event in the database. The stored event will have a 'last_updated' field, this is
-        the time the event is stored in the database as this method returns asynchronously. If
-        event_start is specified this will be the time of the event and also specifying the
-        event_end means the event had a duration.
+        Send an event to be recorded in the database. The stored event will have a 'last_updated'
+        field, this is the time the event is stored in the database as this method returns
+        asynchronously. If event_start is specified this will be the time of the event and also
+        specifying the event_end means the event had a duration.
 
         The governor (see :function:`governor_run_forever`) is responsible for storing the event in
         the database. See :class:`models.Event` for the database model. The name of the actional
@@ -99,6 +99,10 @@ class AbstractActional(AbstractPollingLoop):
         """
         if event_end and not event_start:
             raise ValueError("event_end set without event_start")
+
+        if not self.comms_channel:
+            self.log("Failed to process event as comms channel not connected", "ERROR")
+            return
 
         cm = CommsMessage(action="event",
                           message=event_label,

@@ -1,3 +1,4 @@
+from datetime import datetime
 import time
 
 from pi_fly.actional.abstract import AbstractActional, CommandTemplate
@@ -42,6 +43,9 @@ class SolarThermal(AbstractActional):
         # user. 0 means not in command mode.
         self.run_pump_until = 0
 
+        # a pump event
+        self.pump_start = None
+
     def _gather_input_readings(self):
         """
         :returns:  None if reading either sensor failed
@@ -68,6 +72,16 @@ class SolarThermal(AbstractActional):
         else:
             return hot_water_bottom, solar_collector
 
+    def _start_pump(self):
+        self.solar_pump.state = True
+        if self.pump_start is None:
+            self.pump_start = datetime.utcnow()
+
+    def _stop_pump(self):
+        self.solar_pump.state = False
+        self.send_event('pump running', self.pump_start, datetime.utcnow())
+        self.pump_start = None
+
     def actional_loop_actions(self):
 
         input_readings = self._gather_input_readings()
@@ -87,23 +101,23 @@ class SolarThermal(AbstractActional):
             # User command to run the pump
             if self.run_pump_until > time.time():
                 self.log("Manual pump run starts.")
-                self.solar_pump.state = True
+                self._start_pump()
             else:
                 self.log("Manual pump run ends.")
-                self.solar_pump.state = False
+                self._stop_pump()
                 self.run_pump_until = 0
 
         elif solar_collector <= 1.:
             self.log("Freeze protection: running solar thermal pump.")
-            self.solar_pump.state = True
+            self._start_pump()
 
         elif thermal_difference > self.activate_on_thermal_difference:
             self.log("Running solar thermal pump.")
-            self.solar_pump.state = True
+            self._start_pump()
 
         elif self.solar_pump.state == True:
             self.log("Stopping solar thermal pump.")
-            self.solar_pump.state = False
+            self._stop_pump()
 
     def run_command(self, cmd_message):
         """

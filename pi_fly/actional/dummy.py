@@ -51,7 +51,7 @@ class DummyActional(AbstractActional):
         elif cmd_message == 'send_event':
             event_start = datetime.utcnow()
             event_end = event_start + timedelta(minutes=1)
-            self.event('example event', event_start, event_end)
+            self.send_event('example event', event_start, event_end)
 
             self.log("example event sent")
 
