@@ -6,15 +6,16 @@ Created on 27 Mar 2019
 from datetime import datetime
 from multiprocessing import Process
 
+from flask import current_app
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from pi_fly.actional.actional_management import build_actional_processes, governor_run_forever
 from pi_fly.model import Sensor, Base
 from pi_fly.scoreboard import ScoreBoard
+from pi_fly.test.test_base import BaseTest
 from pi_fly.web_view import create_app
-
-from .test_base import BaseTest
+from pi_fly.web_sessions import session_token_create, SESSION_COOKIE_NAME
 
 
 class BlackHole:
@@ -135,6 +136,11 @@ class TestWebViews(BaseTest):
         send a command to an actional's comms pipe via the scoreboard.
         """
         self.run_actionals()
+
+        # this page needs a session. Sessions are tested in pi_fly.tests.test_web_sessions
+        secret_key = current_app.config['SESSION_PASSWORD']
+        valid_session_token = session_token_create(secret_key)
+        self.test_client.set_cookie('localhost', SESSION_COOKIE_NAME, valid_session_token)
 
         rv = self.test_client.get('/run_command/')
         self.assertEqual(200, rv.status_code)

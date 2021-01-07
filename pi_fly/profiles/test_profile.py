@@ -4,11 +4,13 @@ import tempfile
 from .global_profile import BaseProfile
 from pi_fly.actional.dummy import DummyActional
 from pi_fly.devices.dummy import DummyInput, DummyOutput
+from pi_fly.utils import load_from_file
 
 
 class Profile(BaseProfile):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = None  # replaced with instance var in __init__
+    SESSION_PASSWORD = load_from_file('profiles/session_password')
     INPUT_DEVICES = [DummyInput(name="fake_input"),
                      ]
     the_output_0 = DummyOutput(name="fake_output_0")

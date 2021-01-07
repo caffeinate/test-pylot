@@ -10,3 +10,4 @@ class BaseProfile(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     HTTP_PORT = 8080
     ACTIONALS = []
+    SESSION_PASSWORD = None  # must be set to a string if `valid_session` views are used

@@ -5,12 +5,13 @@ Created on 15 Apr 2018
 '''
 from datetime import datetime
 
-from flask import Flask, render_template, current_app, abort, request
+from flask import Flask, render_template, current_app, abort, request, make_response, redirect
 from flask_sqlalchemy import SQLAlchemy
 
 from pi_fly.actional.abstract import CommsMessage
 from pi_fly.devices.abstract import AbstractSensor
 from pi_fly.model import Sensor
+from pi_fly.web_sessions import valid_session, session_token_create, SESSION_COOKIE_NAME
 
 db = SQLAlchemy()
 
@@ -77,6 +78,7 @@ def create_app(profiles_class, scoreboard):
         return render_template("sensor_scoreboard.html", **page_vars)
 
     @app.route('/run_command/', methods=['GET', 'POST'])
+    @valid_session()
     def run_actional_command():
         """
         GET lists available commands
@@ -106,5 +108,31 @@ def create_app(profiles_class, scoreboard):
             page_vars['message'] = msg
 
         return render_template("run_command.html", **page_vars)
+
+    @app.route('/login/', methods=['GET', 'POST'])
+    def login():
+
+        if request.method == 'POST':
+            secret_key = current_app.config['SESSION_PASSWORD']
+            if secret_key is None:
+                return render_template("user_message.html",
+                                       **{'msg': "secret_key hasn't been set."}
+                                       ), 500
+
+            if request.values.get('password', '') != secret_key:
+                return "Incorrect password", 401
+
+            next_hop = request.values.get('next', '')
+            assert '@' not in next_hop
+            location = request.host_url + next_hop
+            response = make_response(redirect(location, code=302))
+            response.set_cookie(SESSION_COOKIE_NAME,
+                                value=session_token_create(secret_key),
+                                max_age=60 * 60 * 24 * 100,  # 100 days
+                                httponly=True
+                                )
+            return response
+
+        return render_template("login.html")
 
     return app

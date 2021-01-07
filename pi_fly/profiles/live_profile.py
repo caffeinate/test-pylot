@@ -2,12 +2,14 @@ from .global_profile import BaseProfile
 from pi_fly.actional.solar_thermal import SolarThermal
 from pi_fly.devices.gpio_relay import GpioRelay
 from pi_fly.devices.one_wire_temperature import OneWireTemperature
+from pi_fly.utils import load_from_file
 
 
 class Profile(BaseProfile):
     DEBUG = True
     HTTP_PORT = 80
     SQLALCHEMY_DATABASE_URI = "sqlite:////data/sensors.db"
+    SESSION_PASSWORD = load_from_file('profiles/session_password')
     NON_SOLAR_INPUT_DEVICES = [
         OneWireTemperature("28-0015231007ee",
                            name="hot_water_top",
@@ -27,6 +29,21 @@ class Profile(BaseProfile):
                            name="solar_collector",
                            description="solar collector from 2018-11-13, loft before"),
     ]
+    INPUT_DEVICES = NON_SOLAR_INPUT_DEVICES + SOLAR_INPUT_DEVICES
+
+    hot_water = GpioRelay(name="hot_water",
+                          gpio_number=25,
+                          min_switching_time=60,  # seconds
+                          set_state_on_start=False,
+                          log_to_stdout=True,
+                          )
+
+    central_heating = GpioRelay(name="central_heating",
+                                gpio_number=24,
+                                min_switching_time=60,  # seconds
+                                set_state_on_start=False,
+                                log_to_stdout=True,
+                                )
 
     solar_pump = GpioRelay(name="solar_pump",
                            gpio_number=23,
@@ -34,16 +51,17 @@ class Profile(BaseProfile):
                            set_state_on_start=False,
                            log_to_stdout=True,
                            )
-    INPUT_DEVICES = NON_SOLAR_INPUT_DEVICES + SOLAR_INPUT_DEVICES
     OUTPUT_DEVICES = [solar_pump,
+                      central_heating,
+                      hot_water,
                       ]
     DEVICES = INPUT_DEVICES + OUTPUT_DEVICES
     POLLING_LOOPS = [
-        {'name': 'one_wire_general_bus',
+        {'name': 'one_wire_general',
          'sample_frequency': 20,
          'devices': NON_SOLAR_INPUT_DEVICES,
          },
-        {'name': 'one_wire_general_bus',
+        {'name': 'one_wire_solar',
          'sample_frequency': 5,
          'devices': SOLAR_INPUT_DEVICES,
          }

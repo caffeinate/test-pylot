@@ -98,6 +98,16 @@ EOF
 systemctl enable pi_fly.service
 ```
 
+## Authenticated views
+
+Read only views are available without a username or password.
+
+Set the password like this-
+```shell
+cd profiles/
+echo -n supersecretpassword > session_password
+```
+
 ## Useful Commands
 
 Stop the pi_fly service-
