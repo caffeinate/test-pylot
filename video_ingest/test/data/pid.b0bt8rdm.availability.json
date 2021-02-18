@@ -1,0 +1,43 @@
+{
+  "programme_availability": {
+    "pid": "b0bt8rdm",
+    "href": "/nitro/api/pips?q=pid:b0bt8rdm",
+    "rel": "pips-meta:episode",
+    "pm:id": 137626601990300000,
+    "available_version": {
+      "broadcast_type": "ondemand",
+      "last_modified": "2018-11-27T23:53:28Z",
+      "duration": "00:40:00",
+      "territories": {
+        "territory": [
+          {
+            "id": "uk"
+          },
+          {
+            "id": "es"
+          }
+        ]
+      },
+      "revision": 1,
+      "availability": {
+        "actual_start": "2018-11-27T23:53:28Z",
+        "start": "2018-11-28T00:25:00Z",
+        "end": "2018-12-28T00:25:00Z"
+      },
+      "audio_visual_attributes": {
+        "aspect_ratio": {
+          "$": "16:9"
+        },
+        "sound_format": {
+          "$": "Stereo"
+        },
+        "colour": {
+          "$": "colour"
+        },
+        "highest_source_quality": {
+          "$": "HD"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "pips": {
+    "pm:id": 137626338683720000,
+    "episode": {
+      "last_modified": "2018-11-15T02:20:54Z",
+      "embargoed": "false",
+      "master_brand": {
+        "link": {
+          "rel": "pips-meta:master_brand",
+          "mid": "bbc_one",
+          "href": "/nitro/api/pips?q=mid:bbc_one"
+        }
+      },
+      "genres": {
+        "genre_group": [
+          {
+            "genre_id": "C00195"
+          },
+          {
+            "genre_id": "C00200"
+          }
+        ]
+      },
+      "revision": 1,
+      "synopses": {
+        "synopsis": [
+          {
+            "length": "short",
+            "$": "With guest host David Mitchell and panellists Andy Hamilton and Deborah Frances-White."
+          },
+          {
+            "length": "medium",
+            "$": "The extended version of the news quiz. Team captains Paul Merton and Ian Hislop are joined by guest host David Mitchell and panellists Andy Hamilton and Deborah Frances-White."
+          },
+          {
+            "length": "long",
+            "$": "The extended version of the long-running topical news quiz. Team captains Paul Merton and Ian Hislop are joined by guest host David Mitchell and panellists Andy Hamilton and Deborah Frances-White."
+          }
+        ]
+      },
+      "media_type": {
+        "value": "audio_video"
+      },
+      "last_modified_supplier": "rbm",
+      "pid": "b0bt8rdm",
+      "allow_advertising": {
+        "value": "none"
+      },
+      "release_date": {
+        "month": "11",
+        "day": "27",
+        "year": "2018"
+      }
+    },
+    "title_hierarchy": {
+      "titles": [
+        {
+          "containers_title": {
+            "$": "Have I Got a Bit More News for You: Series 56"
+          },
+          "episode_title": {
+            "$": "Episode 7"
+          },
+          "episode": {
+            "$": "Series 56"
+          },
+          "title": {
+            "$": "Have I Got a Bit More News for You"
+          }
+        }
+      ]
+    }
+  }
+}
