@@ -31,19 +31,29 @@ def load_config(deployment_name):
 
 def parse_cli():
     """
-    Simple command line parser. Just one argument is needed - the deployment environment's name.
-
+    Really simple for demo.
+    Deployment name is from single command line argument.
     Returns:
-        (str) deployment name
+        (dict) with keys ['deployment_name', 'worker-ident']
     """
-    if len(sys.argv) != 2:
+    # DEMO - use a proper library to do this
+    if len(sys.argv) > 4 or len(sys.argv) < 2:
         calling_module = os.path.split(sys.argv[0])[1]
-        msg = (f"usage: python {calling_module} <deployment>\n"
+        msg = (f"usage: python {calling_module} <deployment> [--worker-ident X:Y]\n"
                "  where <deployment> in config file name as ./config/config_<deployment>.py\n"
+               "  worker-ident is X (this worker) Y total workers\n"
                )
         sys.stderr.write(msg)
         sys.exit(-1)
 
-    deployment_environment = sys.argv[1]
-    assert deployment_environment.isalnum(), "Dynamic module loading might not be safe"
-    return deployment_environment
+    worker_ident = None
+
+    deployment_name = sys.argv[1]
+    if len(sys.argv) > 2:  # optional, not correctly parsed if id is missing
+        assert sys.argv[2] == '--worker-ident'
+        worker_ident = sys.argv[3]
+
+    r = {'deployment_name': deployment_name,
+         'worker_ident': worker_ident
+         }
+    return r

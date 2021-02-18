@@ -50,7 +50,7 @@ class BootstrapBuild:
         """
         full_path = os.path.abspath(self.config.destination_path)
         path_len = len(full_path)
-        search_path = os.path.join(full_path, '*')
+        search_path = os.path.join(full_path, f'{manifest_prefix}*')
 
         files = []
         for r in glob.glob(search_path):
@@ -66,7 +66,16 @@ class BootstrapBuild:
         Returns:
             (dict) that will serialise into JSON
         """
+        full_path = os.path.abspath(self.config.source_path)
+        path_len = len(full_path)
+        search_path = os.path.join(full_path, '*.json')
+
+        files = []
+        for r in glob.glob(search_path):
+            files.append(r[path_len + 1:])
+
         r = {'created': datetime.utcnow().isoformat(),
+             'source_files': files,
              }
 
         # TODO
@@ -75,8 +84,8 @@ class BootstrapBuild:
 
 if __name__ == '__main__':
 
-    deployment_environment = parse_cli()
-    config = load_config(deployment_name=deployment_environment)
+    params = parse_cli()
+    config = load_config(deployment_name=params['deployment_name'])
 
     bootstrap = BootstrapBuild(config=config, manifest_prefix=manifest_prefix)
     bootstrap.create_manifest()

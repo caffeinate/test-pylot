@@ -4,7 +4,7 @@ import shutil
 
 from .base import BaseConfig
 
-TESTS_PATH = os.path.dirname(os.path.realpath(__file__))
+TESTS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test')
 
 
 class Config(BaseConfig):
