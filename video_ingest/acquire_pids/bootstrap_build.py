@@ -43,6 +43,8 @@ class BootstrapBuild:
         with open(manifest_path, 'w') as f:
             json.dump(self.manifest_content(), f, indent=4)
 
+        print(f"Built {manifest_path}")
+
     def existing_manifests(self):
         """
         Return:

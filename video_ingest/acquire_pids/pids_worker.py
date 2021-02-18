@@ -1,4 +1,5 @@
 from collections import defaultdict
+import hashlib
 import os
 
 import ayeaye
@@ -37,6 +38,7 @@ class PidsWorker(ayeaye.Model):
             build_id (str) unique serial number/name for build
         """
         self.max_records_per_output_file = 10000
+        self.work_around_source_path = ''  # TODO path to be added to JSON docs in manifest by ayeaye
         self.worker_id = kwargs.pop('worker_id')
         self.workers_total = kwargs.pop('workers_total')
         self.build_id = kwargs.pop('build_id')
@@ -105,9 +107,9 @@ class PidsWorker(ayeaye.Model):
             bool indicating if the current worker (self) (with worker_id) should process
             the file.
         """
-        # DEMO - hash uses a salt, not suitable as different machines would have different results
-        # just using it for demo as it produces an int
-        h = abs(hash(file_name))
+        # DEMO - hash() uses a salt, not suitable as different machines would have different results
+        hs = hashlib.md5(file_name.encode('utf-8'))
+        h = int(hs.hexdigest(), 16)
         target_worker = h % self.workers_total
         return target_worker == self.worker_id
 
