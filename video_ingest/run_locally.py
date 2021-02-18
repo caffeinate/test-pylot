@@ -26,6 +26,7 @@ build_id = manifest_file[-15:-5]
 config_context = {'manifest_file_path': manifest_file,
                   'worker_ident': cli_params['worker_ident'],
                   'destination_path': config.destination_path,
+                  'source_path': config.source_path,
                   'build_id': build_id,
                   }
 local_context = ayeaye.connector_resolver.context(**config_context)

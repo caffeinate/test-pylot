@@ -40,8 +40,21 @@ class TestPidsWorker(unittest.TestCase):
         sample_file = os.path.join(TESTS_PATH, 'data', 'pid.b0bt8rdm.availability.json')
         w = PidsWorker(worker_id=1, workers_total=1, build_id='x')
         extract = w.availability_extract(sample_file)
-        expected = {
-        }
+        expected = {'actual_start': '2018-11-27T23:53:28Z',
+                    'broadcast_type': 'ondemand',
+                    'end': '2018-12-28T00:25:00Z',
+                    'pid': 'b0bt8rdm',
+                    'start': '2018-11-28T00:25:00Z'
+                    }
         self.assertEqual(expected, extract)
 
-#             pid.b0bt8rdm.referential.json
+    def test_referential_extract(self):
+
+        sample_file = os.path.join(TESTS_PATH, 'data', 'pid.b0bt8rdm.referential.json')
+        w = PidsWorker(worker_id=1, workers_total=1, build_id='x')
+        extract = w.referential_extract(sample_file)
+        expected = {'master_brand': 'bbc_one',
+                    'pid': 'b0bt8rdm',
+                    'title': 'Have I Got a Bit More News for You: Series 56'
+                    }
+        self.assertEqual(expected, extract)

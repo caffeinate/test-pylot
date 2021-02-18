@@ -15,6 +15,7 @@ $ python -m unittest video_ingest/test/test_*.py
 
 * Copy an existing config or look at BaseConfig class.
 * Ensure the `destination_path` from config directory exists
+* Ensure output subdirectories (`mkdir availability referential`) exist in the `destination_path` directory
 
 Run it-
 

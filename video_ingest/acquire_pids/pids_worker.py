@@ -1,4 +1,5 @@
 from collections import defaultdict
+import os
 
 import ayeaye
 
@@ -20,8 +21,8 @@ class PidsWorker(ayeaye.Model):
     """
     manifest = ayeaye.Connect(engine_url="json://{manifest_file_path}")
 
-    # The output consists of multiple NDJSON files in HIVE partitioned layout
-    output_template = ('ndjson://{destination_path}/{file_type}/build_id={build_id}/'
+    # The output consists of multiple NDJSON files. TODO HIVE partitioned layout
+    output_template = ('ndjson://{destination_path}/{file_type}/build_id={build_id}_'
                        '{worker_id}_{file_number}.ndjson'
                        )
     availability_output = ayeaye.Connect(engine_url=[], access=ayeaye.AccessMode.WRITE)
@@ -62,10 +63,12 @@ class PidsWorker(ayeaye.Model):
             if source_file.endswith('availability.json'):
                 file_type = 'availability'
                 document_extract = self.availability_extract(source_file)
+                output_connector = self.availability_output
 
             elif source_file.endswith('referential.json'):
                 file_type = 'referential'
                 document_extract = self.referential_extract(source_file)
+                output_connector = self.referential_output
             else:
                 self.log(f'Unknown file type for {source_file}', "ERROR")
                 continue
@@ -77,12 +80,12 @@ class PidsWorker(ayeaye.Model):
                                       file_type=file_type,
                                       worker_id=self.worker_id
                                       )
-                resolved_engine_url = self.simple_output_template.format_map(p)
-                connector[file_type] = self.simple_output.add_engine_url(resolved_engine_url)
-                output_file_counter += 1
+                resolved_engine_url = self.output_template.format_map(p)
+                connector[file_type] = output_connector.add_engine_url(resolved_engine_url)
+                output_file_counter += 1  # TODO should be per file_type
                 self.log(f"Writing to {connector[file_type].engine_url}")
 
-            connector.add(document_extract)
+            connector[file_type].add(document_extract)
             records_current_file[file_type] += 1
 
             if records_current_file[file_type] > self.max_records_per_output_file:
@@ -115,7 +118,19 @@ class PidsWorker(ayeaye.Model):
         Returns:
             (dict) of useful fields
         """
-        d = {}
+        # schema evolution of source would be supported here
+        full_path = os.path.join(self.work_around_source_path, source_file)
+        with open(full_path) as f:
+            s = ayeaye.Pinnate(f.read())
+
+        p = s.programme_availability
+        avv = p.available_version
+        d = {"pid": p.pid,
+             "broadcast_type": p.available_version.broadcast_type,
+             "actual_start": avv.availability.actual_start,
+             "start": avv.availability.start,
+             "end": avv.availability.end,
+             }
         return d
 
     def referential_extract(self, source_file):
@@ -126,7 +141,18 @@ class PidsWorker(ayeaye.Model):
             (dict) of useful fields
         """
         # source file should be loaded by ayeaye
-        d = {}
+        # schema evolution of source would be supported here
+        full_path = os.path.join(self.work_around_source_path, source_file)
+        with open(full_path) as f:
+            s = ayeaye.Pinnate(f.read())
+
+        p = s.pips
+        e = p.episode
+
+        d = {"pid": e.pid,
+             "master_brand": e.master_brand.link.mid,
+             "title": p.title_hierarchy.titles[0]['containers_title']['$'],
+             }
         return d
 
 
@@ -136,8 +162,9 @@ if __name__ == '__main__':
     worker_id, workers_total = config_context['worker_ident'].split(':', 1)
 
     with local_context:
-        m = PidsWorker(worker_id=worker_id,
-                       workers_total=workers_total,
+        m = PidsWorker(worker_id=int(worker_id),
+                       workers_total=int(workers_total),
                        build_id=config_context['build_id']
                        )
+        m.work_around_source_path = config_context['source_path']
         m.go()
