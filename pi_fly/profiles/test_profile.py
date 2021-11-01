@@ -25,17 +25,24 @@ class Profile(BaseProfile):
          'devices': INPUT_DEVICES,
          }
     ]
+    
     ACTIONALS = [
-        DummyActional(name="fake_actional_0",
-                      sample_frequency=5,
-                      my_input="fake_input",
-                      my_output=the_output_0
-                      ),
-        DummyActional(name="fake_actional_1",
-                      sample_frequency=3,
-                      my_input="fake_input",
-                      my_output=the_output_1
-                      ),
+        {'actional': DummyActional(name="fake_actional_0",
+                                   sample_frequency=5,
+                                   my_input="fake_input",
+                                   my_output=the_output_0
+                                   ),
+        'allows_user_suspend': True,
+        'display_name': "",
+        },
+        {'actional': DummyActional(name="fake_actional_1",
+                                   sample_frequency=3,
+                                   my_input="fake_input",
+                                   my_output=the_output_1
+                                   ),
+        'allows_user_suspend': True,
+        'display_name': "",
+        },
     ]
 
     def __init__(self):

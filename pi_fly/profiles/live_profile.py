@@ -67,10 +67,13 @@ class Profile(BaseProfile):
          }
     ]
     ACTIONALS = [
-        SolarThermal(name="solar_thermal",
-                     hot_water_bottom="hot_water_bottom",
-                     solar_collector="solar_collector",
-                     solar_pump=solar_pump,
-                     log_to_stdout=True,
-                     ),
+        {'actional': SolarThermal(name="solar_thermal",
+                                  hot_water_bottom="hot_water_bottom",
+                                  solar_collector="solar_collector",
+                                  solar_pump=solar_pump,
+                                  log_to_stdout=True,
+                                  ),
+        'allows_user_suspend': True,
+        'display_name': "",
+        },
     ]

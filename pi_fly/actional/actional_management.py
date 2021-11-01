@@ -21,8 +21,13 @@ def build_actional_processes(config, scoreboard):
 
     None of the Processes in the returned items have been started.
 
-    :param: config dict. or obj with attributes `ACTIONALS` which is a as list of instances with
-            superclass of :class:`AbstractActional` probably a flask config object.
+    :param: config dict. or obj with attributes `ACTIONALS` which is a as list of dictionaries.
+                         probably a flask config object.
+        Each dictionary in the list has-
+        key : value
+        'actional' (instance of superclass of :class:`AbstractActional`)
+        'allows_user_suspend' (boolean) - user can turn this actional off
+        'display_name' (str) - user friendly name for interface
 
     :param: scoreboard instance of :class:`pi_fly.scoreboard.Scoreboard` to pass to each
             instantiated actional.
@@ -31,6 +36,8 @@ def build_actional_processes(config, scoreboard):
             'dict' has key as the actionals' names and value is a dict. with 
                                                 'process' (the actional's process)
                                                 'comms' our end of the Pipe to the actional
+                                                'allows_user_suspend' (see above)
+                                                'display_name' (see above)
 
             If there are no actionals in the config the dict. will be empty.
     """
@@ -44,14 +51,18 @@ def build_actional_processes(config, scoreboard):
     if len(actionals_config) == 0:
         return {}
 
-    for a in actionals_config:
+    for actional_params in actionals_config:
+        
+        actional = actional_params['actional']
         parent_conn, child_conn = Pipe()
-        a.set_comms_channel(child_conn)
-        a.set_scoreboard(scoreboard)
-        p = Process(target=a)
-        actionals[a.name] = {'process': p,
-                             'comms': parent_conn,
-                             }
+        actional.set_comms_channel(child_conn)
+        actional.set_scoreboard(scoreboard)
+        p = Process(target=actional)
+        actionals[actional.name] = {'process': p,
+                                    'comms': parent_conn,
+                                    'display_name': actional_params['display_name'],
+                                    'allows_user_suspend': actional_params['allows_user_suspend'],
+                                    }
 
     # The actionals dict is being passed pre-fork so will loose sync when processes are added and
     # removed.

@@ -66,7 +66,7 @@ def create_app(profiles_class, scoreboard):
                            }
                 p[input_device.name] = display
 
-        actional_names = [a.name for a in current_app.config['ACTIONALS']]
+        actional_names = [a['actional'].name for a in current_app.config['ACTIONALS']]
         for name, values in sensor_values.items():
             if name not in p and name not in actional_names:
                 # in scoreboard but not in config??
@@ -86,10 +86,10 @@ def create_app(profiles_class, scoreboard):
         """
         ac_command = {}
         for ac in current_app.config['ACTIONALS']:
-            ac_command[ac.name] = []
-            for command_template in ac.available_commands:
+            ac_command[ac['actional'].name] = []
+            for command_template in ac['actional'].available_commands:
                 cmd_summary = (command_template.command, command_template.description)
-                ac_command[ac.name].append(cmd_summary)
+                ac_command[ac['actional'].name].append(cmd_summary)
         page_vars = {'actionals_with_commands': ac_command}
 
         if request.method == 'POST':

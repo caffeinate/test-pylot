@@ -42,18 +42,24 @@ class Profile(BaseProfile):
          }
     ]
     ACTIONALS = [
-        DummyActional(name="fake_actional_0",
-                      sample_frequency=5,
-                      my_input="fake_input",
-                      my_output=the_output_0,
-                      log_to_stdout=True
-                      ),
-        DummyActional(name="fake_actional_1",
-                      sample_frequency=3,
-                      my_input="fake_input",
-                      my_output=the_output_1,
-                      log_to_stdout=True
-                      ),
+        {'actional': DummyActional(name="fake_actional_0",
+                                   sample_frequency=5,
+                                   my_input="fake_input",
+                                   my_output=the_output_0,
+                                   log_to_stdout=True
+                                   ),
+        'allows_user_suspend': True,
+        'display_name': "",
+        },
+        {'actional': DummyActional(name="fake_actional_1",
+                                   sample_frequency=3,
+                                   my_input="fake_input",
+                                   my_output=the_output_1,
+                                   log_to_stdout=True
+                                   ),
+        'allows_user_suspend': True,
+        'display_name': "",
+        }
         #         SolarThermal(name="solar_thermal",
         #                      hot_water_bottom="fake_input_0",
         #                      solar_collector="fake_input_1",
