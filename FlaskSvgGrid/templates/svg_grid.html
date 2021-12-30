@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SVG.js</title>
+  <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
+  <style type='text/css'>
+  body {
+    background-color: black;
+  }
+  svg {
+    width: 100vw;
+    height: 100vh;
+    background-color: black;
+  }
+  </style>
+</head>
+
+<body onclick="openFullscreen()">
+</body>
+
+<script type="text/javascript">
+
+
+var now = new Date();
+datestring = now.toJSON()
+
+startTime = Date.parse(datestring)
+initialDelay = 1
+d = new Date()
+
+var gridSequence = [{'cells': [[0,0], [1,2], [2,2]]},
+					{'cells': [[4,1], [2,2], [1,2]]},
+					{'cells': [[4,0], [3,2], [4,2]]},
+					{'cells': [[2,0], [4,2], [1,2]]}
+					]
+for(var t=0; t<gridSequence.length; t++) {
+
+  d.setTime(startTime + (t*1000) + initialDelay)
+  gridSequence[t]['showAt'] = d.toJSON()
+
+}
+console.log(gridSequence)
+
+
+var draw = SVG().addTo('body')
+
+var box_size = 1
+var grid_size = {{grid_dimension}} // number of cells
+var base_colour = '#000'
+var demo_colour = '#f06'
+
+var viewpoint_offset = box_size*0.5
+var viewpoint_size = (box_size*grid_size)+viewpoint_offset
+draw.viewbox(box_size, 0, viewpoint_size, viewpoint_size)
+
+
+var grid = []
+var all_cells = new SVG.List()
+for(var x=0; x<grid_size; x++) {
+  var y_grid = []
+  for(var y=0; y<grid_size; y++) {
+    var cell = draw.rect(box_size, box_size).move(box_size*x, box_size*y).fill(base_colour)
+    cell.attr('stroke-width', 0)
+    y_grid[y] = cell
+    all_cells.push(cell)
+  }
+  grid[x] = y_grid
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+async function runGridSequence(gs) {
+	for(var frame=0; frame<gs.length; frame++) {
+		
+		showTime = Date.parse(gs[frame]['showAt'])
+		console.log(showTime)
+		now = new Date()
+		waitTime = showTime - now.getTime()
+
+		console.log("Wait for: " + waitTime)
+		if(waitTime > 0) {
+			await sleep(waitTime)
+		}
+
+		// display the frame
+		all_cells.fill(base_colour)
+		for(var cellIdx=0; cellIdx<gs[frame]['cells'].length; cellIdx++){
+			
+			cell = gs[frame]['cells'][cellIdx]
+			console.log("frame:" + frame + " cellIdx: " + cellIdx + " cell: " + cell)
+			
+			x = cell[0]
+			y = cell[1]
+			
+			grid[x][y].attr('fill', demo_colour)
+		}
+		
+	}
+}
+var elem = document.documentElement;
+/* View in fullscreen from https://www.w3schools.com/howto/howto_js_fullscreen.asp */
+function openFullscreen() {
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen();
+  } else if (elem.webkitRequestFullscreen) { /* Safari */
+    elem.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) { /* IE11 */
+    elem.msRequestFullscreen();
+  }
+}
+
+
+runGridSequence(gridSequence)
+
+</script>
+</html>
