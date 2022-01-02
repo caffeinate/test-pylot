@@ -37,9 +37,9 @@ for(var t=0; t<gridSequence.length; t++) {
 
   d.setTime(startTime + (t*1000) + initialDelay)
   gridSequence[t]['showAt'] = d.toJSON()
+  console.log(gridSequence)
 
 }
-console.log(gridSequence)
 
 
 var draw = SVG().addTo('body')
@@ -100,6 +100,35 @@ async function runGridSequence(gs) {
 		
 	}
 }
+
+async function run_grid_frames() {
+	
+	frames_url = "http://127.0.0.1:8080/frame"
+	for(var frame=0; frame<100; frame++) {
+		const response = await fetch(
+		        frames_url,
+		        {
+		            method: 'GET'
+		        }
+		    )
+	
+		    if (response.ok) {
+		        r = await response.json()
+		        
+		        // clear display
+				all_cells.fill(base_colour)
+		        
+		        for(var pixelId=0; pixelId<r.cell_values.length; pixelId++){
+		        	x = r.cell_values[pixelId][0]
+		        	y = r.cell_values[pixelId][1]
+		        	colour = r.cell_values[pixelId][2]
+		        	grid[x][y].attr('fill', colour)
+		        }
+		    }
+			await sleep(500)
+	}
+}
+
 var elem = document.documentElement;
 /* View in fullscreen from https://www.w3schools.com/howto/howto_js_fullscreen.asp */
 function openFullscreen() {
@@ -113,7 +142,8 @@ function openFullscreen() {
 }
 
 
-runGridSequence(gridSequence)
+//runGridSequence(gridSequence)
+run_grid_frames()
 
 </script>
 </html>
