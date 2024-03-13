@@ -82,6 +82,22 @@ Update your DNS records (corresponding to the TLS certificate) to point to the p
 Point your browser at "https://xxxx.com:7473/". The username will be neo4j and the password will be whatever you set in `neo4j_secrets.yml`.
 
 
+# Running some code
+
+Ensure you are in the pipenv shell created above and your current working directory is the same as this README and more importantly the `neo4j_secrets.yml` file (which is used by the code to determine the password).
+
+As above `xxxx.com` should be replaced with your host name.
+
+```shell
+export NEO4J_HOST=xxxx.com
+python hello_world.py 
+```
+
+It will print out the query that was run.
+
+Then point your brower at the Neo4J server and you should see the new nodes.
+
+
 # Cleaning up
 
 To delete the resources above use `pulumi destroy`. It will display a list of resources that it will delete.
