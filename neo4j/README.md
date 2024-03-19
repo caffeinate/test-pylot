@@ -114,5 +114,5 @@ Note-
 
 # References
 
-* [https://neo4j.com/docs/operations-manual/current/docker/security/]
+* https://neo4j.com/docs/operations-manual/current/docker/security/
 * https://neo4j.com/docs/operations-manual/current/configuration/connectors/
