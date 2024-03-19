@@ -1,10 +1,10 @@
-'''
+"""
 Run web view with gunicorn
 
 Created on 22 Apr 2018
 
 @author: si
-'''
+"""
 from multiprocessing import Process
 import sys
 
@@ -17,15 +17,17 @@ from pi_fly.web_view import create_app
 
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
-
     def __init__(self, app, options=None):
         self.options = options or {}
         self.application = app
         super().__init__()
 
     def load_config(self):
-        config = {key: value for key, value in self.options.items()
-                  if key in self.cfg.settings and value is not None}
+        config = {
+            key: value
+            for key, value in self.options.items()
+            if key in self.cfg.settings and value is not None
+        }
         for key, value in config.items():
             self.cfg.set(key.lower(), value)
 
@@ -34,11 +36,10 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
 
 def run_forever(profile_label):
-
     scoreboard = ScoreBoard()  # for storing sensor values
-    app = create_app('profiles.%s_profile.Profile' % profile_label, scoreboard)
+    app = create_app("profiles.%s_profile.Profile" % profile_label, scoreboard)
 
-    # read input device loops from profile and make a Proc per loop
+    # read input device loops from profile and make a Process per loop
     # proc instead of async because of isolation in event of lock or exception or other failure
     process_list = []
     polling_loops = build_device_polling_loops(app.config, scoreboard)
@@ -48,12 +49,13 @@ def run_forever(profile_label):
         process_list.append(p)
 
     # proc to store values into DB
-    db_loop = DatabaseStoragePollingLoop(scoreboard,
-                                         app.config['SQLALCHEMY_DATABASE_URI'],
-                                         name="db_loop",
-                                         sample_frequency=5 * 60,
-                                         log_to_stdout=True,
-                                         )
+    db_loop = DatabaseStoragePollingLoop(
+        scoreboard,
+        app.config["SQLALCHEMY_DATABASE_URI"],
+        name="db_loop",
+        sample_frequency=5 * 60,
+        log_to_stdout=True,
+    )
     db_loop.create_db()
     p = Process(target=db_loop)
     p.start()
@@ -64,30 +66,30 @@ def run_forever(profile_label):
     actional_names = []
     for actional_name, actional_details in actional_details.items():
         actional_names.append(actional_name)
-        actional_details['process'].start()
-        process_list.append(actional_details['process'])
+        actional_details["process"].start()
+        process_list.append(actional_details["process"])
         # communications channel (instance of :class:`multiprocessing.Pipe`) is kept on the
         # scoreboard so other processes can communicate with the actionals
-        scoreboard.update_value(actional_name, {'comms': actional_details['comms']})
+        scoreboard.update_value(actional_name, {"comms": actional_details["comms"]})
 
-    governor_kwargs = {'scoreboard': scoreboard,
-                       'actional_names': actional_names,
-                       'profile': app.config
-                       }
+    governor_kwargs = {
+        "scoreboard": scoreboard,
+        "actional_names": actional_names,
+        "profile": app.config,
+    }
     governor_proc = Process(target=governor_run_forever, kwargs=governor_kwargs)
     governor_proc.start()
     process_list.append(governor_proc)
 
     options = {
-        'bind': '%s:%s' % ('0.0.0.0', app.config.get('HTTP_PORT', '80')),
-        'workers': 2,
+        "bind": "%s:%s" % ("0.0.0.0", app.config.get("HTTP_PORT", "80")),
+        "workers": 2,
     }
 
     StandaloneApplication(app, options).run()
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     if len(sys.argv) != 2:
         msg = "usage: python main.py <profile label>\n"
         sys.stderr.write(msg)

@@ -6,9 +6,9 @@ Flask + shared memory to asynchronously connect a load of Rasberry Pi sensors an
 
 Some sensors take a few seconds to return a reading, others can be polled faster. Create a load of polling loops at different speeds and use these to write to shared memory (see [scoreboard.py](scoreboard.py)).
 
-The web front end shares the scoreboard so can quickly read the sensor values without reading from them directly.
+The web front end can access the shared memory so can quickly read recent sensor values without having to read them directly from the devices.
 
-At regular intervals sensor values are stored in an SqlAlchemy ORM managed SQLite database.
+At regular intervals sensor values are stored in an SqlAlchemy ORM managed SQLite database. These are also read from shared memory.
 
 Events can be logged or stored in the database. 
 
@@ -106,6 +106,18 @@ Set the password like this-
 ```shell
 cd profiles/
 echo -n supersecretpassword > session_password
+```
+
+## Heating / Hotwater timings file
+
+The `HeatingHotwater` actional won't start and will log an event if this file is missing.
+
+```shell
+cd profiles/
+cat > heating_hotwater.ndjson << EOF
+{"time": "05:00", "heating_target": 17.0, "hot_water_target": 40.0}
+{"time": "07:00", "heating_target": 15.0, "hot_water_target": 10.0}
+EOF
 ```
 
 ## Useful Commands
