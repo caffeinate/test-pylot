@@ -5,6 +5,8 @@ Run Neo4J in a docker container that restarts on reboot of the host.
 
 See top level README.md
 """
+import yaml
+
 import pulumi
 from pulumi_aws import ec2, iam
 
@@ -22,10 +24,9 @@ ec2_instance_size = "t2.small"
 ec2_instance_name = stack_label
 ec2_ami_owner = "099720109477"  # Ubuntu
 
-# botl port supports TLS and non-TLS. Config passed to docker ensures TLS
-bolt_port = 7687
-neo4j_secure_port = 7473
 ssh_port = 22
+https_port = 443
+
 
 # arbitrary choice of availability zone
 any_az = aws_region + "b"
@@ -36,6 +37,37 @@ default_subnet = ec2.DefaultSubnet(
         "Name": f"Default subnet for {any_az}",
     },
 )
+
+
+def private_ips(args):
+    """
+    Find a couple of IP addresses. It's a hack, should at least check if they are already allocated
+    see https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/describe_network_interfaces.html
+
+    You'll get an error like this if the hack is too hackish-
+    "creating EC2 Network Interface: InvalidIPAddress.InUse: The specified address is already in use."
+
+    @param args: tuple with (0) being a cidr in a str
+    @return tuple with two private ip addresses
+    """
+    cidr_block = args[0]  # e.g. "172.31.32.0/20"
+    network_address, _netmask = cidr_block.split("/", 1)
+    octets = network_address.split(".")
+    final_octet = int(octets[-1])
+
+    # anything outside of reserved range
+    final_octet += 10
+
+    address_0 = ".".join(octets[0:3]) + f".{final_octet+1}"
+    address_1 = ".".join(octets[0:3]) + f".{final_octet+2}"
+    return {"http_private_ip": address_0, "bolt_private_ip": address_1}
+
+
+private_ips = pulumi.Output.all(default_subnet.cidr_block).apply(private_ips)
+
+
+pulumi.export("http_private_ip", private_ips["http_private_ip"])
+pulumi.export("bolt_private_ip", private_ips["bolt_private_ip"])
 
 ami = ec2.get_ami(
     most_recent="true",
@@ -79,7 +111,7 @@ def build_simple_security_group(*ports):
     return pulumi_security_group
 
 
-security_groups = [build_simple_security_group(bolt_port, neo4j_secure_port, ssh_port)]
+security_groups = [build_simple_security_group(ssh_port, https_port)]
 
 
 # Allow secrets to be read - not resource specific
@@ -118,21 +150,59 @@ instance_role = iam.Role(
 )
 instance_profile = iam.InstanceProfile("instance_profile", role=instance_role.name)
 
+
+# To run both bolt and https on the same port there need to be two public and two associated
+# private IP adddresses
+
+
+def extract_ipv4(args):
+    "Get list of str from dict."
+    priv_ips_dict = args[0]
+    return list(priv_ips_dict.values())
+
+
+private_ips_list = pulumi.Output.all(private_ips).apply(extract_ipv4)
+nic = ec2.NetworkInterface(
+    "neo4j_nic",
+    subnet_id=default_subnet.id,
+    private_ips=private_ips_list,
+    security_groups=security_groups,
+    tags={"Name": "Neo4j"},
+)
+
+http_eip = ec2.Eip(
+    "http_eip",
+    network_interface=nic.id,
+    associate_with_private_ip=private_ips["http_private_ip"],
+    tags={"Name": "Neo4j HTTPS"},
+)
+bolt_eip = ec2.Eip(
+    "bolt_eip",
+    network_interface=nic.id,
+    associate_with_private_ip=private_ips["bolt_private_ip"],
+    tags={"Name": "Neo4j Bolt"},
+)
+
 # Create EC2 instance
 ec2_instance = ec2.Instance(
     ec2_instance_name,
     instance_type=ec2_instance_size,
-    vpc_security_group_ids=security_groups,
     ami=ami.id,
     key_name=ec2_keypair_name,
-    associate_public_ip_address=True,
-    subnet_id=default_subnet.id,
+    network_interfaces=[
+        ec2.InstanceNetworkInterfaceArgs(
+            device_index=0,
+            network_interface_id=nic.id,
+        )
+    ],
     iam_instance_profile=instance_profile.id,
     tags={
         "Name": ec2_instance_name,
     },
 )
 
+
+pulumi.export("public_ipv4_bolt", bolt_eip.public_ip)
+pulumi.export("public_ipv4_primary", http_eip.public_ip)
 pulumi.export("source_ami_urm", ami.arn)
-pulumi.export("public_ip", ec2_instance.public_ip)
 pulumi.export("instance_id", ec2_instance.id)

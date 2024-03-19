@@ -15,7 +15,7 @@ set -euo pipefail
 pulumi stack select $STACK_LABEL
 pulumi up
 
-BUILD_HOST=$(pulumi stack output public_ip)
+BUILD_HOST=$(pulumi stack output public_ipv4_primary)
 ./wait_for_ssh.sh $BUILD_HOST
 
 ansible-playbook -i $BUILD_HOST, playbook.yml

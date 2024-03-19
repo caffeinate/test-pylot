@@ -2,6 +2,8 @@
 
 Run the Neo4J graph database in docker on a single EC2 instance with TLS. Stand it all up using Pulumi and Ansible.
 
+Both bolt (neo4j API) and web front end are accessed though the https tcp port.
+
 # TLS
 
 Using [Lets Encrypt](https://letsencrypt.org/) for the TLS certificates. This part isn't scripted as it's a pain for a proof of concept/experient in an environment which uses the certificates outside of a webserver (i.e. the Neo4J server is used).
@@ -53,12 +55,16 @@ Then terminate the EC2 instance.
 
 First, [setup Pulumi](https://www.pulumi.com/docs/get-started/).
 
-Create a file called `neo4j_secrets.yml` to include the startup password and AWS secret name (created in secion above)-
+Create a file called `neo4j_STACK_NAME_conf.yml` to include the startup password and AWS secret name (created in secion above) and domain names-
+
+Replace *STACK_NAME* with the same stack name you give to pulumi. In the example below this is *dev*.
 
 ```
 ---
 secret_name: aws_secrets_manager_secret_name
 neo4j_password: supersecretpassword
+bolt_dns_name: neoapi.xxxxx.com
+https_dns_name: neo4j.xxxxx.com
 ```
 
 Note-
@@ -79,18 +85,17 @@ An EC2 instance will be created in the default subnet with a single public IP ad
 
 Update your DNS records (corresponding to the TLS certificate) to point to the public IP address output at the end of the process above.
 
-Point your browser at "https://xxxx.com:7473/". The username will be neo4j and the password will be whatever you set in `neo4j_secrets.yml`.
+Point your browser at "https://xxxx.com". The username will be neo4j and the password will be whatever you set in `neo4j_STACK_NAME_conf.yml`.
 
 
 # Running some code
 
-Ensure you are in the pipenv shell created above and your current working directory is the same as this README and more importantly the `neo4j_secrets.yml` file (which is used by the code to determine the password).
+Ensure you are in the pipenv shell created above and your current working directory is the same as this README and more importantly the `neo4j_STACK_NAME_conf.yml` file (which is used by the code to determine the password).
 
-As above `xxxx.com` should be replaced with your host name.
 
 ```shell
-export NEO4J_HOST=xxxx.com
-python hello_world.py 
+export PULUMI_STACK=$(pulumi stack --show-name)
+python hello_world.py
 ```
 
 It will print out the query that was run.
@@ -105,3 +110,9 @@ To delete the resources above use `pulumi destroy`. It will display a list of re
 Note-
 - You will loose any data within the neo4j databases
 - The default subnet won't be deleted even if it was created by pulumi
+
+
+# References
+
+* [https://neo4j.com/docs/operations-manual/current/docker/security/]
+* https://neo4j.com/docs/operations-manual/current/configuration/connectors/

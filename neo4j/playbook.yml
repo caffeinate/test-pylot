@@ -5,13 +5,50 @@
   become: yes
 
   tasks:
+    - name: Fetch bolt_private_ip
+      shell: pulumi stack output bolt_private_ip
+      register: pulumi_bolt_private_ip
+      delegate_to: "localhost"
+      become: no
+
+    - name: Fetch http_private_ip
+      shell: pulumi stack output http_private_ip
+      register: pulumi_http_private_ip
+      delegate_to: "localhost"
+      become: no
+
+    - name: Fetch public_ipv4_bolt
+      shell: pulumi stack output public_ipv4_bolt
+      register: pulumi_public_ipv4_bolt
+      delegate_to: "localhost"
+      become: no
+
+    - name: Fetch public_ipv4_primary
+      shell: pulumi stack output public_ipv4_primary
+      register: pulumi_public_ipv4_primary
+      delegate_to: "localhost"
+      become: no
+
+    - name: Fetch http_private_ip
+      shell: pulumi stack --show-name
+      register: pulumi_stack_name
+      delegate_to: "localhost"
+      become: no
+
     - set_fact:
         neo4j_home: /root/neo4j
         runtime_user: 7474
         runtime_user_group: 7474
+        bolt_private_ip: "{{ pulumi_bolt_private_ip.stdout }}"
+        http_private_ip: "{{ pulumi_http_private_ip.stdout }}"
+        public_ipv4_primary: "{{ pulumi_public_ipv4_primary.stdout }}"
+        public_ipv4_bolt: "{{ pulumi_public_ipv4_bolt.stdout }}"
+        bolt_port: 7687 # bolt port supports TLS and non-TLS. Config passed to docker ensures TLS
+        neo4j_secure_port: 7473
+        stack_name: "{{ pulumi_stack_name.stdout }}"
 
-    - name: Load secret_name and neo4j password
-      ansible.builtin.include_vars: neo4j_secrets.yml
+    - name: Load neo4j stack config
+      ansible.builtin.include_vars: neo4j_{{stack_name}}_conf.yml
 
     - name: Update all packages to their latest version
       apt:
@@ -19,13 +56,12 @@
         state: latest
         update_cache: yes
   
-    - name: Installing packages common to all deployed projects
+    - name: Installing packages - known 'No package matching' issue. Just run ./go.sh again
       apt:
         pkg:
         - awscli
         - python3-apt # needed by ansible's apt command to install .deb urls. i.e. cloudwatch agent
         - docker.io
-
 
     - name: Certificates locations
       file:
@@ -75,8 +111,8 @@
     - name: Run Neo4j in docker with --restart unless-stopped - TODO make this idempotent
       shell: |
         /usr/bin/docker run \
-        --publish=7473:7473 \
-        --publish=7687:7687 \
+        --publish={{http_private_ip}}:443:{{neo4j_secure_port}} \
+        --publish={{bolt_private_ip}}:443:{{bolt_port}} \
         --volume={{neo4j_home}}/certificates:/ssl \
         --volume={{neo4j_home}}/conf:/conf \
         --volume={{neo4j_home}}/data:/data \
@@ -85,4 +121,7 @@
         --restart unless-stopped \
         --detach \
         neo4j:5.17.0
+
+    - debug:
+        msg: "Update your DNS.... {{public_ipv4_primary}} -> {{https_dns_name}} and {{public_ipv4_bolt}} -> {{bolt_dns_name}}"
 

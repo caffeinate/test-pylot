@@ -1,5 +1,6 @@
 pi_fly/profiles/session_password
-neo4j/neo4j_secrets.yml
+neo4j/neo4j_*_conf.yml
+neo4j/Pulumi.*.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

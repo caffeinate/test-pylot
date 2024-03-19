@@ -41,7 +41,7 @@ class HelloNeo4j:
             query_params[f"node_name_{idx}"] = node_name
 
             if idx > 0:
-                query += f"CREATE (n{idx-1})-[:Connected]->(n{idx}) "
+                query += f"CREATE (n{idx-1})-[:plus_one]->(n{idx}) "
 
         query += "RETURN n0.name"
         self.log(f"Running: {query}")
@@ -64,12 +64,15 @@ if __name__ == "__main__":
     import os
     import yaml
 
-    # Get the password used by ansible to configure the docker container
-    with open("neo4j_secrets.yml") as f:
+    # Don't forget export PULUMI_STACK=$(pulumi stack --show-name)
+    stack_name = os.environ["PULUMI_STACK"]
+
+    # Get the password used by ansible to configure the docker container + DNS info
+    with open(f"neo4j_{stack_name}_conf.yml") as f:
         config = yaml.safe_load(f)
 
-    neo4j_host = os.environ["NEO4J_HOST"]
-    uri = f"bolt+s://{neo4j_host}:7687"
+    neo4j_host = config["bolt_dns_name"]
+    uri = f"bolt+s://{neo4j_host}:443"
 
     user = "neo4j"
     password = config["neo4j_password"]
