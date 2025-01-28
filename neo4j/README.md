@@ -111,6 +111,8 @@ Note-
 - You will loose any data within the neo4j databases
 - The default subnet won't be deleted even if it was created by pulumi
 
+Then delete the DNS records. This is a security precaution to stop someone [re-allocating](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html#using-eip-recovering) your IP address and masquerading as your domain.
+
 
 # References
 
