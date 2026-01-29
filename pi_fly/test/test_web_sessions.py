@@ -33,7 +33,6 @@ class TestWebSessions(BaseTest):
         self.assertEqual(302, rv.status_code)
 
     def test_login(self):
-
         d = {"password": "incorrectpassword"}
         rv = self.test_client.post("/login/", data=d, follow_redirects=False)
         self.assertEqual(401, rv.status_code)
@@ -42,25 +41,19 @@ class TestWebSessions(BaseTest):
         rv = self.test_client.post("/login/", data=d, follow_redirects=False)
         self.assertEqual(302, rv.status_code)
 
-        # Find auth session cookie
-        session_id = ""
-        for cookie in self.test_client.cookie_jar:
-            if cookie.name == SESSION_COOKIE_NAME:
-                session_id = cookie.value
-                break
-        self.assertTrue(session_id != "", "Session cookie not found")
+        session_cookie = self.test_client.get_cookie(SESSION_COOKIE_NAME)
+        self.assertTrue(session_cookie.value != "", "Session cookie not found")
 
     def test_restricted_page(self):
-
         secret_key = current_app.config["SESSION_PASSWORD"]
         valid_session_token = session_token_create(secret_key)
-        self.test_client.set_cookie("localhost", SESSION_COOKIE_NAME, valid_session_token)
+        self.test_client.set_cookie(SESSION_COOKIE_NAME, valid_session_token)
 
         rv = self.test_client.get("/run_command/")
         self.assertEqual(200, rv.status_code)
 
     def test_invalid_token(self):
         invalid_token = "xxxxx:a01e2608a63d6dc8c2b80118983a83172d13c7ec"
-        self.test_client.set_cookie("localhost", SESSION_COOKIE_NAME, invalid_token)
+        self.test_client.set_cookie(SESSION_COOKIE_NAME, invalid_token)
         rv = self.test_client.get("/run_command/")
         self.assertEqual(302, rv.status_code)

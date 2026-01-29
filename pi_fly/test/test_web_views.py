@@ -1,8 +1,8 @@
-'''
+"""
 Created on 27 Mar 2019
 
 @author: si
-'''
+"""
 from datetime import datetime
 from multiprocessing import Process
 
@@ -26,7 +26,6 @@ class BlackHole:
 
 
 class TestWebViews(BaseTest):
-
     def setUp(self):
         super().setUp()
 
@@ -57,46 +56,43 @@ class TestWebViews(BaseTest):
             self.shutdown_procs()
 
     def test_empty_db(self):
-        rv = self.test_client.get('/')
+        rv = self.test_client.get("/")
         self.assertEqual(200, rv.status_code)
-        self.assertIn(b'No sensor readings in DB', rv.data)
+        self.assertIn(b"No sensor readings in DB", rv.data)
 
     def test_dashboard(self):
         """
         The last value from sensor table in db should be on the dashboard.
         """
         # sensor_id for water is currently hard coded into the dashboard's view
-        reading = {'last_updated': datetime.utcnow(),
-                   'sensor_id': '28-0015231007ee',
-                   'value_type': 'temperature',
-                   'value_float': 123.4,
-                   }
+        reading = {
+            "last_updated": datetime.utcnow(),
+            "sensor_id": "28-0015231007ee",
+            "value_type": "temperature",
+            "value_float": 123.4,
+        }
         r = Sensor(**reading)
         self.db_session.add(r)
         self.db_session.commit()
 
-        rv = self.test_client.get('/')
+        rv = self.test_client.get("/")
         self.assertEqual(200, rv.status_code)
-        self.assertIn(b'123', rv.data, "Temperature should be rounded to nearest degree")
+        self.assertIn(b"123", rv.data, "Temperature should be rounded to nearest degree")
 
     def test_scoreboard(self):
         """
         Check the shared memory for holding sensor values can be accessed.
         """
         self.run_actionals()  # these share the dashboard
-        values_read = {'sensor_id': None,
-                       'value_type': "time",
-                       'value_float': 1553982125.797958
-                       }
-        self.app.sensor_scoreboard.update_value('fake_input', values_read)
+        values_read = {"sensor_id": None, "value_type": "time", "value_float": 1553982125.797958}
+        self.app.sensor_scoreboard.update_value("fake_input", values_read)
 
-        rv = self.test_client.get('/sensor_scoreboard/')
+        rv = self.test_client.get("/sensor_scoreboard/")
         self.assertEqual(200, rv.status_code)
-        self.assertIn(b'1553982125.797958', rv.data, "Time of fake input sensor not found.")
-        self.assertNotIn('fake_actional_0',
-                         str(rv.data),
-                         'Actionals shouldnt be in the scoreboard view'
-                         )
+        self.assertIn(b"1553982125.797958", rv.data, "Time of fake input sensor not found.")
+        self.assertNotIn(
+            "fake_actional_0", str(rv.data), "Actionals shouldnt be in the scoreboard view"
+        )
 
     def run_actionals(self):
         """
@@ -108,10 +104,10 @@ class TestWebViews(BaseTest):
         self.proc_table = []
         for ac_name, ac_parts in actional_details.items():
             # can't pickle a process so just put the comms part on
-            self.scoreboard.update_value(ac_name, {'comms': ac_parts['comms']})
+            self.scoreboard.update_value(ac_name, {"comms": ac_parts["comms"]})
             ac_names.append(ac_name)
-            self.proc_table.append(ac_parts['process'])
-            ac_parts['process'].start()
+            self.proc_table.append(ac_parts["process"])
+            ac_parts["process"].start()
 
         black_hole = BlackHole()
 
@@ -138,21 +134,23 @@ class TestWebViews(BaseTest):
         self.run_actionals()
 
         # this page needs a session. Sessions are tested in pi_fly.tests.test_web_sessions
-        secret_key = current_app.config['SESSION_PASSWORD']
+        secret_key = current_app.config["SESSION_PASSWORD"]
         valid_session_token = session_token_create(secret_key)
-        self.test_client.set_cookie('localhost', SESSION_COOKIE_NAME, valid_session_token)
+        self.test_client.set_cookie(SESSION_COOKIE_NAME, valid_session_token)
 
-        rv = self.test_client.get('/run_command/')
+        rv = self.test_client.get("/run_command/")
         self.assertEqual(200, rv.status_code)
         # Command from :class:`actional.dummy.DummyActional`
-        self.assertIn(b'Log &#34;hello command hello&#34;', rv.data)
+        self.assertIn(b"Log &#34;hello command hello&#34;", rv.data)
 
         # next POST it
-        rv = self.test_client.post('/run_command/',
-                                   data={'actional_name': 'fake_actional_0',
-                                         'command': 'ABC',
-                                         }
-                                   )
+        rv = self.test_client.post(
+            "/run_command/",
+            data={
+                "actional_name": "fake_actional_0",
+                "command": "ABC",
+            },
+        )
         self.assertEqual(200, rv.status_code)
         # Command from :class:`actional.dummy.DummyActional`
-        self.assertIn(b'Running....fake_actional_0 .. ABC', rv.data)
+        self.assertIn(b"Running....fake_actional_0 .. ABC", rv.data)

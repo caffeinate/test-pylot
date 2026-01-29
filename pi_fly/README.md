@@ -1,6 +1,6 @@
 # Pi Fly
 
-Flask + shared memory to asynchronously connect a load of Rasberry Pi sensors and outputs to a web front end.
+Flask + shared memory to asynchronously connect a load of Rasberry Pi input sensors and outputs (via relays) to a web front end.
 
 ## Overview
 
