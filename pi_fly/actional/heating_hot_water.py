@@ -130,10 +130,9 @@ class HeatingHotWater(AbstractActional):
 
         # flick gpio relay
         self.boiler_control_switch[boiler_mode].state = True
-        boiler_start = self.boiler_start[boiler_mode]
 
-        if boiler_start is None:
-            boiler_start = datetime.utcnow()
+        if self.boiler_start[boiler_mode] is None:
+            self.boiler_start[boiler_mode] = datetime.utcnow()
 
     def _stop_boiler(self, boiler_mode):
         """
@@ -145,7 +144,7 @@ class HeatingHotWater(AbstractActional):
         self.boiler_control_switch[boiler_mode].state = False
         boiler_start = self.boiler_start[boiler_mode]
         self.send_event(f"{boiler_mode.value} running", boiler_start, datetime.utcnow())
-        boiler_start = None
+        self.boiler_start[boiler_mode] = None
 
     def actional_loop_actions(self):
         for boiler_mode, run_util in self.run_until.items():
