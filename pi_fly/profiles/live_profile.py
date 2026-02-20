@@ -9,6 +9,10 @@ from pi_fly.utils import load_from_file
 class Profile(BaseProfile):
     DEBUG = True
     HTTP_PORT = 80
+    TLS_OPTIONS = {
+        "certfile": "/etc/letsencrypt/live/7b.caffeinate.org.uk/fullchain.pem",
+        "keyfile": "/etc/letsencrypt/live/7b.caffeinate.org.uk/privkey.pem",
+    }
     SQLALCHEMY_DATABASE_URI = "sqlite:////data/sensors.db"
     SESSION_PASSWORD = load_from_file("profiles/session_password")
     NON_SOLAR_INPUT_DEVICES = [

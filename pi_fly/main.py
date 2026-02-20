@@ -82,7 +82,6 @@ def run_forever(profile_label):
     process_list.append(governor_proc)
 
     tls_options = app.config.get("TLS_OPTIONS")
-
     if tls_options:
         options = {
             "bind": "0.0.0.0:443",
