@@ -1,8 +1,8 @@
-'''
+"""
 Created on 1 Feb 2019
 
 @author: si
-'''
+"""
 from datetime import datetime
 import os
 import time
@@ -23,7 +23,7 @@ def build_device_polling_loops(profile, scoreboard):
             ready from :method:`run_forever` to be run on.
     """
     if isinstance(profile, dict):
-        loops_config = profile['POLLING_LOOPS']
+        loops_config = profile["POLLING_LOOPS"]
     else:
         loops_config = profile.POLLING_LOOPS
 
@@ -35,9 +35,8 @@ def build_device_polling_loops(profile, scoreboard):
 
 
 class AbstractPollingLoop:
-
-    SAMPLE_FREQUENCY = 2.  # can be class variable in subclasses or passed as kwarg.
-    # It's samples per second.
+    SAMPLE_FREQUENCY = 2.0  # can be class variable in subclasses or passed as kwarg.
+    # It's number of seconds per sample.
 
     def __init__(self, scoreboard, **kwargs):
         """
@@ -58,12 +57,12 @@ class AbstractPollingLoop:
             log_to_stdout (bool) print log messages to standard output
         """
         self.scoreboard = scoreboard
-        self.name = kwargs.pop('name')
-        self.sample_frequency = kwargs.pop('sample_frequency', self.__class__.SAMPLE_FREQUENCY)
-        self.description = kwargs.pop('description', None)
-        self.log_to_stdout = kwargs.pop('log_to_stdout', False)
+        self.name = kwargs.pop("name")
+        self.sample_frequency = kwargs.pop("sample_frequency", self.__class__.SAMPLE_FREQUENCY)
+        self.description = kwargs.pop("description", None)
+        self.log_to_stdout = kwargs.pop("log_to_stdout", False)
 
-        self.wait_time_total = 0.
+        self.wait_time_total = 0.0
         self.loop_count = 0
         self.loop_last_ran = None
         self.terminate_now = False  # set by subclass to cleanly terminate at end of next loop
@@ -96,7 +95,7 @@ class AbstractPollingLoop:
         if wait_for < 0:
             msg = "Couldn't keep up with sampling. Sampling took {} seconds."
             self.log(msg.format(time_taken), "WARNING")
-            return 0.
+            return 0.0
 
         return wait_for
 
@@ -126,7 +125,7 @@ class DevicesPollingLoop(AbstractPollingLoop):
         Read from input devices and store results on the scoreboard.
         """
         super().__init__(scoreboard, **kwargs)
-        self.devices = kwargs.pop('devices')
+        self.devices = kwargs.pop("devices")
 
     def loop_actions(self):
         # read device is a sensor
@@ -152,6 +151,7 @@ class DatabaseStoragePollingLoop(AbstractPollingLoop):
     def create_db(self):
         engine = create_engine(self.sensors_db)
 
+        # TODO - I think this is a DSN not a filesystem path. How can this work?
         if not os.access(self.sensors_db, os.R_OK):
             self.log("Creating new DB {}".format(self.sensors_db))
         # just update tables
@@ -175,13 +175,12 @@ class DatabaseStoragePollingLoop(AbstractPollingLoop):
         self.db_session.commit()
 
     def loop_actions(self):
-
         for device_id, current_value in self.scoreboard.get_all_current_values():
             msg = "Reading: {}".format(device_id)
             # TODO details to store in DB should be determined by being an instance
             # of a parent class, maybe named tuple called DeviceReading. detecting
             # this by checking field names isn't right.
-            device_fields = ['sensor_id', 'value_type', 'value_float']
+            device_fields = ["sensor_id", "value_type", "value_float"]
             if all([f in current_value for f in device_fields]):
                 msg += "{sensor_id},{value_type},{value_float}"
                 self.log(msg.format(**current_value))

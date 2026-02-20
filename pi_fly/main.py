@@ -81,10 +81,20 @@ def run_forever(profile_label):
     governor_proc.start()
     process_list.append(governor_proc)
 
-    options = {
-        "bind": "%s:%s" % ("0.0.0.0", app.config.get("HTTP_PORT", "80")),
-        "workers": 2,
-    }
+    tls_options = app.config.get("TLS_OPTIONS")
+
+    if tls_options:
+        options = {
+            "bind": "0.0.0.0:443",
+            "workers": 2,
+            "certfile": tls_options["certfile"],
+            "keyfile": tls_options["keyfile"],
+        }
+    else:
+        options = {
+            "bind": "%s:%s" % ("0.0.0.0", app.config.get("HTTP_PORT", "80")),
+            "workers": 2,
+        }
 
     StandaloneApplication(app, options).run()
 
