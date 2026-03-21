@@ -6,3 +6,5 @@ build:
       - pip3 install -r requirements.txt
 run:
   command: python3 main.py
+  network:
+    port: 5000
